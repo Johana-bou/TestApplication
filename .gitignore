@@ -1,0 +1,38 @@
+# Dépendances Node
+node_modules/
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+douanes-app/dist/
+electron/dist/
+backend/dist/
+backend/build/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+backend/venv/
+backend/.venv/
+*.spec.bak
+
+# Electron ressources générées
+electron/resources/backend/
+electron/renderer/
+
+# Environnement
+.env
+**/.env
+
+# Base de données locale
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
