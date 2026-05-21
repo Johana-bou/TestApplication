@@ -5,11 +5,14 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # Fix avertissement Node.js
+
 jobs:
   # ── JOB 1 : Backend Python → .exe autonome ──────────────────
   build-backend:
     name: 🐍 Backend → .exe autonome
-    runs-on: windows-latest
+    runs-on: windows-2022   # Plus stable que windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -24,14 +27,13 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Compiler en .exe autonome (tout embarqué)
+      - name: Compiler en .exe autonome
         run: |
           cd backend
           pyinstaller run.spec --clean --noconfirm
 
-      - name: Vérifier la taille du .exe
-        run: |
-          dir backend\dist\run.exe
+      - name: Vérifier le .exe généré
+        run: dir backend\dist\
 
       - uses: actions/upload-artifact@v4
         with:
@@ -41,7 +43,7 @@ jobs:
   # ── JOB 2 : React + Electron → .msi ─────────────────────────
   build-msi:
     name: ⚛️ Electron → MSI standalone
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: build-backend
 
     steps:
