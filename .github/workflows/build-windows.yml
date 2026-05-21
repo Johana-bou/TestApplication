@@ -1,0 +1,83 @@
+name: Build DouaneGestion MSI (Standalone)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # ── JOB 1 : Backend Python → .exe autonome ──────────────────
+  build-backend:
+    name: 🐍 Backend → .exe autonome
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer dépendances + PyInstaller
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compiler en .exe autonome (tout embarqué)
+        run: |
+          cd backend
+          pyinstaller run.spec --clean --noconfirm
+
+      - name: Vérifier la taille du .exe
+        run: |
+          dir backend\dist\run.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-exe
+          path: backend/dist/run.exe
+
+  # ── JOB 2 : React + Electron → .msi ─────────────────────────
+  build-msi:
+    name: ⚛️ Electron → MSI standalone
+    runs-on: windows-latest
+    needs: build-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Récupérer backend.exe
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-exe
+          path: electron/resources/backend/
+
+      - name: Build React (Vite)
+        run: |
+          cd douanes-app
+          npm ci
+          npm run build
+
+      - name: Copier build React → electron/renderer
+        run: |
+          xcopy /E /I /Y douanes-app\dist electron\renderer
+
+      - name: Générer le MSI
+        run: |
+          cd electron
+          npm ci
+          npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Publier le MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: DouaneGestion-Setup-Windows
+          path: electron/dist/*.msi
+          retention-days: 30

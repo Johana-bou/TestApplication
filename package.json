@@ -1,0 +1,47 @@
+{
+  "name": "Gestion-receveur",
+  "version": "1.0.0",
+  "description": "Application de gestion des activités du receveur",
+  "main": "electron/main.js",
+  "homepage": "https://gestion-receveur.app",
+  "author": {
+    "name": "LE NATHA",
+    "email": "nathanaeldaawe@gmail.com"
+  },
+  "scripts": {
+    "start": "electron .",
+    "build-react": "cd frontend && npm install && npm run build",
+    "build-python": "cd backend && pyinstaller --onefile --name run --collect-all uvicorn --hidden-import uvicorn.logging --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols.http.auto --hidden-import uvicorn.protocols.websockets.auto --hidden-import uvicorn.lifespan.on run.py",
+    "build-all": "npm run build-react && npm run build-python",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.monapp.desktop",
+    "productName": "Gestion Receveur",
+    "files": [
+      "electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "frontend/dist",
+        "to": "frontend/dist"
+      },
+      {
+        "from": "backend/dist",
+        "to": "app.asar.unpacked/backend/dist"
+      }
+    ],
+    "asarUnpack": [
+      "backend/dist/**"
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility",
+      "maintainer": "LE NATHA <nathanaeldaawe@gmail.com>"
+    }
+  }
+}
