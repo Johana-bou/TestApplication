@@ -91,4 +91,3 @@ jobs:
           name: DouaneGestion-Setup-Windows
           path: electron/dist/*.exe
           retention-days: 30
-
