@@ -95,11 +95,10 @@ jobs:
         run: |
           xcopy /E /I /Y douanes-app\dist electron\renderer
 
-      - name: Nettoyer les caches npm et node_modules
+      - name: Supprimer tous les fichiers .ico (évite l'erreur 256x256)
         run: |
-          cd electron
-          Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+          Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force
+          Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
 
       - name: Générer le Setup Windows
         run: |
