@@ -34,7 +34,7 @@
       "icon": "assets/icon.png",
       "target": [
         {
-          "target": "msi",
+          "target": "nsis",
           "arch": ["x64"]
         }
       ]
