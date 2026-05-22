@@ -2,17 +2,14 @@ import sys
 import os
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
-# Collecter toutes les dépendances automatiquement
 datas = []
 binaries = []
 hiddenimports = []
 
-# FastAPI + Uvicorn complets
 for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio']:
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
 
-# SQLAlchemy complet
 for pkg in ['sqlalchemy']:
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
@@ -46,7 +43,6 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    console=False,          # Pas de fenêtre noire
-    onefile=True,           # Tout dans UN seul .exe
-    icon='../electron/assets/icon.ico',
+    console=False,
+    onefile=True,
 )
