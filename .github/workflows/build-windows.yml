@@ -6,13 +6,12 @@ on:
   workflow_dispatch:
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # Fix avertissement Node.js
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── JOB 1 : Backend Python → .exe autonome ──────────────────
   build-backend:
     name: 🐍 Backend → .exe autonome
-    runs-on: windows-2022   # Plus stable que windows-latest
+    runs-on: windows-2022
 
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +19,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Afficher le contenu de run.spec (debug)
+        run: cat backend/run.spec
 
       - name: Installer dépendances + PyInstaller
         run: |
@@ -40,7 +42,6 @@ jobs:
           name: backend-exe
           path: backend/dist/run.exe
 
-  # ── JOB 2 : React + Electron → .msi ─────────────────────────
   build-msi:
     name: ⚛️ Electron → MSI standalone
     runs-on: windows-2022
