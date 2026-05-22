@@ -8,11 +8,15 @@ hiddenimports = []
 
 for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio']:
     d, b, h = collect_all(pkg)
-    datas += d; binaries += b; hiddenimports += h
+    datas += d
+    binaries += b
+    hiddenimports += h
 
 for pkg in ['sqlalchemy']:
     d, b, h = collect_all(pkg)
-    datas += d; binaries += b; hiddenimports += h
+    datas += d
+    binaries += b
+    hiddenimports += h
 
 a = Analysis(
     ['run.py'],
