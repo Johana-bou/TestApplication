@@ -30,14 +30,13 @@
       "preload.js",
       "renderer/**/*"
     ],
-    "win": {
-      "icon": "assets/icon.ico",
-      "target": [
-        {
-          "target": "msi",
-          "arch": ["x64"]
-        }
-      ]
+  "win": {
+    "target": [
+      {
+        "target": "msi",
+        "arch": ["x64"]
+      }
+    ]
     },
     "msi": {
       "oneClick": false,
