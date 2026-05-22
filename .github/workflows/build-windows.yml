@@ -63,7 +63,7 @@ jobs:
       - name: Build React (Vite)
         run: |
           cd douanes-app
-          npm ci
+          npm install
           npm run build
 
       - name: Copier build React → electron/renderer
@@ -73,7 +73,7 @@ jobs:
       - name: Générer le MSI
         run: |
           cd electron
-          npm ci
+          npm install
           npm run build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
