@@ -42,7 +42,6 @@ jobs:
           name: backend-exe
           path: backend/dist/run.exe
 
-
   build-msi:
     name: ⚛️ Electron → Setup Windows standalone
     runs-on: windows-2022
@@ -54,6 +53,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # 🔧 Nettoyage complet avant toute chose
+      - name: Supprimer l'icône potentiellement problématique
+        run: |
+          if (Test-Path "electron/assets/icon.ico") { Remove-Item "electron/assets/icon.ico" -Force }
+          if (Test-Path "electron/assets/icon.png") { Remove-Item "electron/assets/icon.png" -Force }
+          if (Test-Path "electron/icon.ico") { Remove-Item "electron/icon.ico" -Force }
+          if (Test-Path "electron/icon.png") { Remove-Item "electron/icon.png" -Force }
+
+      - name: Nettoyer complètement la configuration de l'icône dans package.json
+        run: |
+          cd electron
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          # Supprimer toute propriété "icon" dans "win" et à la racine de "build"
+          if ($pkg.build.win.PSObject.Properties.Name -contains "icon") {
+            $pkg.build.win.PSObject.Properties.Remove("icon")
+          }
+          if ($pkg.build.PSObject.Properties.Name -contains "icon") {
+            $pkg.build.PSObject.Properties.Remove("icon")
+          }
+          # Réécrire le fichier
+          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json
+          # Vérification
+          Write-Host "package.json après nettoyage :"
+          Get-Content package.json | Select-String "icon"
 
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
@@ -71,6 +95,12 @@ jobs:
         run: |
           xcopy /E /I /Y douanes-app\dist electron\renderer
 
+      - name: Nettoyer les caches npm et node_modules
+        run: |
+          cd electron
+          Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+
       - name: Générer le Setup Windows
         run: |
           cd electron
@@ -85,5 +115,3 @@ jobs:
           name: DouaneGestion-Setup-Windows
           path: electron/dist/*.exe
           retention-days: 30
-
-
