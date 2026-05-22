@@ -20,9 +20,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Afficher le contenu de run.spec (debug)
-        run: cat backend/run.spec
-
       - name: Installer dépendances + PyInstaller
         run: |
           cd backend
@@ -33,9 +30,6 @@ jobs:
         run: |
           cd backend
           pyinstaller run.spec --clean --noconfirm
-
-      - name: Vérifier le .exe généré
-        run: dir backend\dist\
 
       - uses: actions/upload-artifact@v4
         with:
@@ -53,14 +47,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # 🔧 Nettoyage des icônes
-      - name: Supprimer l'icône potentiellement problématique
-        run: |
-          if (Test-Path "electron/assets/icon.ico") { Remove-Item "electron/assets/icon.ico" -Force }
-          if (Test-Path "electron/assets/icon.png") { Remove-Item "electron/assets/icon.png" -Force }
-          if (Test-Path "electron/icon.ico") { Remove-Item "electron/icon.ico" -Force }
-          if (Test-Path "electron/icon.png") { Remove-Item "electron/icon.png" -Force }
 
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
@@ -82,6 +68,13 @@ jobs:
         run: |
           Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force
           Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
+
+      - name: Nettoyer les caches npm
+        run: |
+          cd electron
+          npm cache clean --force
+          Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
 
       - name: Générer le Setup Windows
         run: |
