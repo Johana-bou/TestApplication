@@ -54,30 +54,13 @@ jobs:
         with:
           node-version: '20'
 
-      # 🔧 Nettoyage complet avant toute chose
+      # 🔧 Nettoyage des icônes
       - name: Supprimer l'icône potentiellement problématique
         run: |
           if (Test-Path "electron/assets/icon.ico") { Remove-Item "electron/assets/icon.ico" -Force }
           if (Test-Path "electron/assets/icon.png") { Remove-Item "electron/assets/icon.png" -Force }
           if (Test-Path "electron/icon.ico") { Remove-Item "electron/icon.ico" -Force }
           if (Test-Path "electron/icon.png") { Remove-Item "electron/icon.png" -Force }
-
-      - name: Nettoyer complètement la configuration de l'icône dans package.json
-        run: |
-          cd electron
-          $pkg = Get-Content package.json | ConvertFrom-Json
-          # Supprimer toute propriété "icon" dans "win" et à la racine de "build"
-          if ($pkg.build.win.PSObject.Properties.Name -contains "icon") {
-            $pkg.build.win.PSObject.Properties.Remove("icon")
-          }
-          if ($pkg.build.PSObject.Properties.Name -contains "icon") {
-            $pkg.build.PSObject.Properties.Remove("icon")
-          }
-          # Réécrire le fichier
-          $pkg | ConvertTo-Json -Depth 10 | Set-Content package.json
-          # Vérification
-          Write-Host "package.json après nettoyage :"
-          Get-Content package.json | Select-String "icon"
 
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
@@ -101,14 +84,13 @@ jobs:
           Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
 
       - name: Générer le Setup Windows
-      - name: Générer le Setup Windows
         run: |
           cd electron
           npm install
           npx electron-builder --win --x64 --publish=never
         env:
           GH_TOKEN: ""
-          GITHUB_TOKEN: "" # Nécessaire pour éviter les erreurs de publication automatique (même si on ne publie pas)
+          GITHUB_TOKEN: ""
 
       - name: 📦 Publier le Setup Windows
         uses: actions/upload-artifact@v4
