@@ -31,8 +31,12 @@
       "renderer/**/*"
     ],
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
-        { "target": "msi", "arch": ["x64"] }
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
       ]
     },
     "msi": {
