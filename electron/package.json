@@ -15,6 +15,7 @@
   "build": {
     "appId": "cm.douanegestion.app",
     "productName": "DouaneGestion",
+    "publish": "never",
     "directories": {
       "output": "dist"
     },
