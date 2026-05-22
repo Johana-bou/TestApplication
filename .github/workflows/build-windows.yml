@@ -101,12 +101,14 @@ jobs:
           Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
 
       - name: Générer le Setup Windows
+      - name: Générer le Setup Windows
         run: |
           cd electron
           npm install
-          npm run build:win
+          npx electron-builder --win --x64 --publish=never
         env:
-          GH_TOKEN: "" # Nécessaire pour éviter les erreurs de publication automatique (même si on ne publie pas)
+          GH_TOKEN: ""
+          GITHUB_TOKEN: "" # Nécessaire pour éviter les erreurs de publication automatique (même si on ne publie pas)
 
       - name: 📦 Publier le Setup Windows
         uses: actions/upload-artifact@v4
