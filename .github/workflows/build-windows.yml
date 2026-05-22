@@ -106,7 +106,7 @@ jobs:
           npm install
           npm run build:win
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: "" # Nécessaire pour éviter les erreurs de publication automatique (même si on ne publie pas)
 
       - name: 📦 Publier le Setup Windows
         uses: actions/upload-artifact@v4
