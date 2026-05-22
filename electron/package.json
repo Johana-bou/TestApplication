@@ -4,13 +4,9 @@
   "description": "Application de gestion douaniere",
   "author": "DouaneGestion",
   "main": "main.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ton-utilisateur/SIG_project.git"
-  },
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win --x64"
+    "build:win": "electron-builder --win --x64 --publish=never"
   },
   "devDependencies": {
     "electron": "^30.0.0",
