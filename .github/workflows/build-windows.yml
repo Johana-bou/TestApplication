@@ -42,8 +42,9 @@ jobs:
           name: backend-exe
           path: backend/dist/run.exe
 
+
   build-msi:
-    name: ⚛️ Electron → MSI standalone
+    name: ⚛️ Electron → Setup Windows standalone
     runs-on: windows-2022
     needs: build-backend
 
@@ -70,7 +71,7 @@ jobs:
         run: |
           xcopy /E /I /Y douanes-app\dist electron\renderer
 
-      - name: Générer le MSI
+      - name: Générer le Setup Windows
         run: |
           cd electron
           npm install
@@ -78,9 +79,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Publier le MSI
+      - name: 📦 Publier le Setup Windows
         uses: actions/upload-artifact@v4
         with:
           name: DouaneGestion-Setup-Windows
-          path: electron/dist/*.msi
+          path: electron/dist/*.exe
           retention-days: 30
+
+
