@@ -20,39 +20,41 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Afficher les infos Python
+      - name: Afficher l'environnement Python
         run: |
           where python
           python --version
           python -c "import sys; print(sys.executable)"
 
-      - name: Installer dépendances (explicite)
+      - name: Installer dépendances (verbose)
         run: |
           cd backend
           python -m pip install --upgrade pip
-          python -m pip install uvicorn fastapi sqlalchemy pydantic anyio python-multipart python-dotenv pyinstaller
+          python -m pip install --no-cache-dir --verbose uvicorn fastapi sqlalchemy pydantic anyio python-multipart python-dotenv pyinstaller
 
-      - name: Lister les paquets installés
+      - name: Lister tous les paquets installés
         run: |
           python -m pip list
 
       - name: Vérifier uvicorn avec pip show
         run: |
-          python -m pip show uvicorn
+          python -m pip show uvicorn || echo "uvicorn n'est pas installé"
 
-      - name: Vérifier l'import d'uvicorn
+      - name: Tenter l'import de uvicorn
         run: |
-          python -c "import uvicorn; print(uvicorn.__file__)"
+          python -c "import uvicorn; print('OK')"
 
-      - name: Compiler en .exe autonome
+      - name: Compiler avec PyInstaller (si import réussi)
         run: |
           cd backend
           pyinstaller --onefile --name run --console --collect-all uvicorn run.py --clean --noconfirm
+        if: success()
 
       - uses: actions/upload-artifact@v4
         with:
           name: backend-exe
           path: backend/dist/run.exe
+        if: success()
 
   build-msi:
     name: ⚛️ Electron → Setup Windows standalone
