@@ -20,26 +20,34 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Afficher les infos Python
+        run: |
+          where python
+          python --version
+          python -c "import sys; print(sys.executable)"
+
       - name: Installer dépendances (explicite)
         run: |
           cd backend
           python -m pip install --upgrade pip
           python -m pip install uvicorn fastapi sqlalchemy pydantic anyio python-multipart python-dotenv pyinstaller
 
-      - name: Vérifier les imports
+      - name: Lister les paquets installés
         run: |
-          cd backend
-          python -c "import uvicorn; print('UVICORN OK')"
+          python -m pip list
+
+      - name: Vérifier uvicorn avec pip show
+        run: |
+          python -m pip show uvicorn
+
+      - name: Vérifier l'import d'uvicorn
+        run: |
+          python -c "import uvicorn; print(uvicorn.__file__)"
 
       - name: Compiler en .exe autonome
         run: |
           cd backend
-          pyinstaller --onefile --name run --console --collect-all uvicorn --collect-all fastapi --collect-all sqlalchemy run.py --clean --noconfirm
-
-      - name: Tester l'exe (optionnel)
-        run: |
-          cd backend/dist
-          .\run.exe --help || echo "Pas de --help, mais l'exe a été généré"
+          pyinstaller --onefile --name run --console --collect-all uvicorn run.py --clean --noconfirm
 
       - uses: actions/upload-artifact@v4
         with:
