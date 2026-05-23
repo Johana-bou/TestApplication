@@ -6,7 +6,7 @@ datas = []
 binaries = []
 hiddenimports = []
 
-for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio']:
+for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio', 'dotenv']:
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
 
@@ -23,8 +23,8 @@ a = Analysis(
         ('.env', '.'),
         ('douanes.db', '.'),
     ],
-    hiddenimports=hiddenimports + collect_submodules('uvicorn') + [
-        # ✅ Imports uvicorn forcés explicitement
+    hiddenimports=hiddenimports + collect_submodules('uvicorn') + collect_submodules('dotenv') + [
+        # ✅ uvicorn complet
         'uvicorn',
         'uvicorn.main',
         'uvicorn.config',
@@ -48,6 +48,12 @@ a = Analysis(
         'uvicorn.supervisors',
         'uvicorn.supervisors.basereload',
         'uvicorn.supervisors.multiprocess',
+        # ✅ dotenv complet
+        'dotenv',
+        'dotenv.main',
+        'dotenv.compat',
+        'dotenv.parser',
+        'dotenv.variables',
         # ✅ Dépendances indirectes souvent manquantes
         'h11',
         'h11._connection',
@@ -80,6 +86,6 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    console=False,  # ⚠️ Mets True temporairement pour voir les erreurs si ça plante encore
+    console=True,  # ✅ True pour voir les erreurs dans CMD
     onefile=True,
 )
