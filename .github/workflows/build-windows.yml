@@ -30,8 +30,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\pip\Cache
-          key: pip-windows-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: pip-windows-
+          key: pip-windows-v2-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: pip-windows-v2-
 
       - name: Installer dépendances + PyInstaller
         run: |
@@ -68,15 +68,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\npm-cache
-          key: npm-react-windows-${{ hashFiles('douanes-app/package-lock.json') }}
-          restore-keys: npm-react-windows-
+          key: npm-react-windows-v2-${{ hashFiles('douanes-app/package-lock.json') }}
+          restore-keys: npm-react-windows-v2-
 
       - name: Cache npm (Electron)
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\npm-cache
-          key: npm-electron-windows-${{ hashFiles('electron/package-lock.json') }}
-          restore-keys: npm-electron-windows-
+          key: npm-electron-windows-v2-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: npm-electron-windows-v2-
 
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
