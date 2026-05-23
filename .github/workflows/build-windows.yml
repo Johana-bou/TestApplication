@@ -2,11 +2,14 @@ name: Build DouaneGestion (Windows + Linux)
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    tags:
+      - 'v*'           # ✅ Uniquement sur les vraies releases (ex: v1.0.0)
+  workflow_dispatch:   # ✅ Lancement manuel possible depuis GitHub
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
 
 jobs:
 
@@ -21,7 +24,15 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # ✅ CACHE pip → évite de retélécharger les packages à chaque build
+      - name: Cache pip (Windows)
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: pip-windows-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: pip-windows-
 
       - name: Installer dépendances + PyInstaller
         run: |
@@ -38,6 +49,7 @@ jobs:
         with:
           name: backend-exe-windows
           path: backend/dist/run.exe
+          retention-days: 1   # ✅ Artefact temporaire, inutile de garder 90 jours
 
   # ════════════════════════════════════════════
   # 🐍 BACKEND LINUX → run (binaire ELF)
@@ -50,7 +62,15 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # ✅ CACHE pip → évite de retélécharger les packages à chaque build
+      - name: Cache pip (Linux)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-linux-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: pip-linux-
 
       - name: Installer dépendances + PyInstaller
         run: |
@@ -67,6 +87,7 @@ jobs:
         with:
           name: backend-exe-linux
           path: backend/dist/run
+          retention-days: 1   # ✅ Artefact temporaire
 
   # ════════════════════════════════════════════
   # ⚛️ ELECTRON WINDOWS → Setup NSIS .exe
@@ -80,7 +101,23 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ✅ CACHE npm React (douanes-app)
+      - name: Cache npm (React)
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\npm-cache
+          key: npm-react-windows-${{ hashFiles('douanes-app/package-lock.json') }}
+          restore-keys: npm-react-windows-
+
+      # ✅ CACHE npm Electron
+      - name: Cache npm (Electron)
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\npm-cache
+          key: npm-electron-windows-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: npm-electron-windows-
 
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
@@ -91,28 +128,23 @@ jobs:
       - name: Build React (Vite)
         run: |
           cd douanes-app
-          npm install
+          npm ci         
           npm run build
 
       - name: Copier build React → electron/renderer
         run: xcopy /E /I /Y douanes-app\dist electron\renderer
 
+      # ✅ Suppression des icônes problématiques (inchangé)
       - name: Supprimer icônes problématiques
         run: |
           Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force
           Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
 
-      - name: Nettoyer cache npm
-        run: |
-          cd electron
-          npm cache clean --force
-          Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
-          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
-
+      # ✅ Plus besoin de nettoyer le cache npm manuellement grâce au cache Action
       - name: Générer le Setup Windows
         run: |
           cd electron
-          npm install
+          npm ci
           npx electron-builder --win --x64 --publish=never
         env:
           GH_TOKEN: ""
@@ -137,7 +169,30 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ✅ CACHE npm React (douanes-app)
+      - name: Cache npm (React)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-react-linux-${{ hashFiles('douanes-app/package-lock.json') }}
+          restore-keys: npm-react-linux-
+
+      # ✅ CACHE npm Electron
+      - name: Cache npm (Electron)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-electron-linux-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: npm-electron-linux-
+
+      # ✅ Cache apt-get pour les dépendances système
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-linux-${{ runner.os }}-electron-deps
 
       - name: Installer dépendances système Linux
         run: |
@@ -164,22 +219,16 @@ jobs:
       - name: Build React (Vite)
         run: |
           cd douanes-app
-          npm install
+          npm ci
           npm run build
 
       - name: Copier build React → electron/renderer
         run: cp -r douanes-app/dist/. electron/renderer/
 
-      - name: Nettoyer cache npm
-        run: |
-          cd electron
-          npm cache clean --force
-          rm -rf node_modules package-lock.json
-
       - name: Générer AppImage + deb
         run: |
           cd electron
-          npm install
+          npm ci
           npx electron-builder --linux --x64 --publish=never
         env:
           GH_TOKEN: ""
@@ -198,3 +247,4 @@ jobs:
           name: DouaneGestion-Linux-deb
           path: electron/dist/*.deb
           retention-days: 30
+          
