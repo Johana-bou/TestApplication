@@ -1,25 +1,32 @@
-import uvicorn
-from app.main import app
+import sys
+import os
 
-if __name__ == "__main__":
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=8000,
-        reload=False 
-    )
-# ── Point d'entrée pour PyInstaller ──────────────────────────
-if __name__ == "__main__":
-    import argparse
+# ── Résolution des chemins (PyInstaller compatible) ───────────
+if getattr(sys, 'frozen', False):
+    # Mode packagé : fichiers extraits dans sys._MEIPASS
+    BASE_DIR = sys._MEIPASS
+else:
+    # Mode développement
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ── Charger les variables d'environnement ─────────────────────
+from dotenv import load_dotenv
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+# ── Forcer SQLAlchemy à trouver la DB au bon endroit ──────────
+DB_PATH = os.path.join(BASE_DIR, 'douanes.db')
+os.environ.setdefault('DATABASE_URL', f'sqlite:///{DB_PATH}')
+
+# ── Lire le port depuis la variable d'env (injectée par Electron) ──
+PORT = int(os.environ.get('PORT', 8000))
+
+# ── Démarrage Uvicorn ─────────────────────────────────────────
+if __name__ == '__main__':
     import uvicorn
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
-
     uvicorn.run(
-        "app.main:app",    # ← Adaptez selon votre structure
-        host="127.0.0.1",
-        port=args.port,
-        log_level="info"
+        'app.main:app',
+        host='127.0.0.1',   # localhost uniquement, plus sécurisé
+        port=PORT,
+        reload=False,
+        log_level='info',
     )
