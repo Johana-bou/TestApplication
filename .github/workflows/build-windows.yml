@@ -1,4 +1,4 @@
-name: Build DouaneGestion MSI (Standalone)
+name: Build DouaneGestion (Windows + Linux)
 
 on:
   push:
@@ -9,10 +9,13 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-backend:
-    name: 🐍 Backend → .exe autonome
-    runs-on: windows-2022
 
+  # ════════════════════════════════════════════
+  # 🐍 BACKEND WINDOWS → run.exe
+  # ════════════════════════════════════════════
+  build-backend-windows:
+    name: 🐍 Backend Windows → .exe
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v4
 
@@ -33,14 +36,45 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: backend-exe
+          name: backend-exe-windows
           path: backend/dist/run.exe
 
-  build-msi:
-    name: ⚛️ Electron → Setup Windows standalone
-    runs-on: windows-2022
-    needs: build-backend
+  # ════════════════════════════════════════════
+  # 🐍 BACKEND LINUX → run (binaire ELF)
+  # ════════════════════════════════════════════
+  build-backend-linux:
+    name: 🐍 Backend Linux → binaire ELF
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer dépendances + PyInstaller
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compiler en binaire Linux
+        run: |
+          cd backend
+          pyinstaller run.spec --clean --noconfirm
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-exe-linux
+          path: backend/dist/run
+
+  # ════════════════════════════════════════════
+  # ⚛️ ELECTRON WINDOWS → Setup NSIS .exe
+  # ════════════════════════════════════════════
+  build-windows:
+    name: ⚛️ Electron → Setup Windows
+    runs-on: windows-2019
+    needs: build-backend-windows
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +85,7 @@ jobs:
       - name: Récupérer backend.exe
         uses: actions/download-artifact@v4
         with:
-          name: backend-exe
+          name: backend-exe-windows
           path: electron/resources/backend/
 
       - name: Build React (Vite)
@@ -61,15 +95,14 @@ jobs:
           npm run build
 
       - name: Copier build React → electron/renderer
-        run: |
-          xcopy /E /I /Y douanes-app\dist electron\renderer
+        run: xcopy /E /I /Y douanes-app\dist electron\renderer
 
-      - name: Supprimer tous les fichiers .ico (évite l'erreur 256x256)
+      - name: Supprimer icônes problématiques
         run: |
           Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force
           Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
 
-      - name: Nettoyer les caches npm
+      - name: Nettoyer cache npm
         run: |
           cd electron
           npm cache clean --force
@@ -85,9 +118,83 @@ jobs:
           GH_TOKEN: ""
           GITHUB_TOKEN: ""
 
-      - name: 📦 Publier le Setup Windows
+      - name: 📦 Publier Setup Windows
         uses: actions/upload-artifact@v4
         with:
           name: DouaneGestion-Setup-Windows
           path: electron/dist/*.exe
+          retention-days: 30
+
+  # ════════════════════════════════════════════
+  # ⚛️ ELECTRON LINUX → AppImage + .deb
+  # ════════════════════════════════════════════
+  build-linux:
+    name: ⚛️ Electron → AppImage + deb Linux
+    runs-on: ubuntu-20.04
+    needs: build-backend-linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installer dépendances système Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libarchive-tools \
+            rpm \
+            fakeroot \
+            libgtk-3-0 \
+            libnotify-dev \
+            libnss3 \
+            libxss1 \
+            libxtst6
+
+      - name: Récupérer backend Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-exe-linux
+          path: electron/resources/backend/
+
+      - name: Rendre le backend exécutable
+        run: chmod +x electron/resources/backend/run
+
+      - name: Build React (Vite)
+        run: |
+          cd douanes-app
+          npm install
+          npm run build
+
+      - name: Copier build React → electron/renderer
+        run: cp -r douanes-app/dist/. electron/renderer/
+
+      - name: Nettoyer cache npm
+        run: |
+          cd electron
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+
+      - name: Générer AppImage + deb
+        run: |
+          cd electron
+          npm install
+          npx electron-builder --linux --x64 --publish=never
+        env:
+          GH_TOKEN: ""
+          GITHUB_TOKEN: ""
+
+      - name: 📦 Publier AppImage Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: DouaneGestion-Linux-AppImage
+          path: electron/dist/*.AppImage
+          retention-days: 30
+
+      - name: 📦 Publier deb Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: DouaneGestion-Linux-deb
+          path: electron/dist/*.deb
           retention-days: 30
