@@ -6,7 +6,8 @@ datas = []
 binaries = []
 hiddenimports = []
 
-for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio', 'dotenv']:
+# ✅ NE PAS inclure 'dotenv' ici — ce n'est pas un package PyInstaller
+for pkg in ['fastapi', 'uvicorn', 'starlette', 'pydantic', 'anyio']:
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
 
@@ -48,13 +49,13 @@ a = Analysis(
         'uvicorn.supervisors',
         'uvicorn.supervisors.basereload',
         'uvicorn.supervisors.multiprocess',
-        # ✅ dotenv complet
+        # ✅ python-dotenv (importé comme 'dotenv' dans le code)
         'dotenv',
         'dotenv.main',
-        'dotenv.compat',
         'dotenv.parser',
         'dotenv.variables',
-        # ✅ Dépendances indirectes souvent manquantes
+        'dotenv.compat',
+        # ✅ Dépendances indirectes
         'h11',
         'h11._connection',
         'h11._events',
@@ -66,6 +67,15 @@ a = Analysis(
         'anyio.abc',
         'sniffio',
         'email_validator',
+        # ✅ Autres packages du requirements.txt souvent manqués
+        'passlib',
+        'passlib.handlers',
+        'passlib.handlers.bcrypt',
+        'jose',
+        'jose.jwt',
+        'multipart',
+        'pymysql',
+        'pydantic_settings',
     ],
     hookspath=[],
     runtime_hooks=[],
