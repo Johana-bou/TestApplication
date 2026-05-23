@@ -18,7 +18,7 @@ jobs:
   # ════════════════════════════════════════════
   build-backend-windows:
     name: 🐍 Backend Windows → .exe
-    runs-on: windows-2019
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +55,7 @@ jobs:
   # ════════════════════════════════════════════
   build-windows:
     name: ⚛️ Electron → Setup Windows
-    runs-on: windows-2019
+    runs-on: windows-latest
     needs: build-backend-windows
     steps:
       - uses: actions/checkout@v4
