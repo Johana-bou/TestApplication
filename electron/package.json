@@ -6,7 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win --x64 --publish=never"
+    "build:win": "electron-builder --win --x64 --publish=never",
+    "build:linux": "electron-builder --linux --x64 --publish=never"
   },
   "devDependencies": {
     "electron": "^30.0.0",
@@ -38,13 +39,31 @@
         }
       ]
     },
-    "msi": {
+    "nsis": {
       "oneClick": false,
       "perMachine": true,
       "runAfterFinish": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "DouaneGestion"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Office",
+      "maintainer": "DouaneGestion",
+      "description": "Application de gestion douaniere"
+    },
+    "deb": {
+      "depends": ["libnotify4", "libxtst6", "libnss3"]
     }
   }
 }
