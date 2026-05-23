@@ -1,10 +1,10 @@
-name: Build DouaneGestion (Windows + Linux)
+name: Build DouaneGestion (Windows)
 
 on:
   push:
     tags:
-      - 'v*'           # ✅ Uniquement sur les vraies releases (ex: v1.0.0)
-  workflow_dispatch:   # ✅ Lancement manuel possible depuis GitHub
+      - 'v*'
+  workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -26,7 +26,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # ✅ CACHE pip → évite de retélécharger les packages à chaque build
       - name: Cache pip (Windows)
         uses: actions/cache@v4
         with:
@@ -49,45 +48,7 @@ jobs:
         with:
           name: backend-exe-windows
           path: backend/dist/run.exe
-          retention-days: 1   # ✅ Artefact temporaire, inutile de garder 90 jours
-
-  # ════════════════════════════════════════════
-  # 🐍 BACKEND LINUX → run (binaire ELF)
-  # ════════════════════════════════════════════
-  build-backend-linux:
-    name: 🐍 Backend Linux → binaire ELF
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      # ✅ CACHE pip → évite de retélécharger les packages à chaque build
-      - name: Cache pip (Linux)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-linux-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: pip-linux-
-
-      - name: Installer dépendances + PyInstaller
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Compiler en binaire Linux
-        run: |
-          cd backend
-          pyinstaller run.spec --clean --noconfirm
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: backend-exe-linux
-          path: backend/dist/run
-          retention-days: 1   # ✅ Artefact temporaire
+          retention-days: 1
 
   # ════════════════════════════════════════════
   # ⚛️ ELECTRON WINDOWS → Setup NSIS .exe
@@ -103,7 +64,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # ✅ CACHE npm React (douanes-app)
       - name: Cache npm (React)
         uses: actions/cache@v4
         with:
@@ -111,7 +71,6 @@ jobs:
           key: npm-react-windows-${{ hashFiles('douanes-app/package-lock.json') }}
           restore-keys: npm-react-windows-
 
-      # ✅ CACHE npm Electron
       - name: Cache npm (Electron)
         uses: actions/cache@v4
         with:
@@ -128,19 +87,17 @@ jobs:
       - name: Build React (Vite)
         run: |
           cd douanes-app
-          npm ci         
+          npm ci
           npm run build
 
       - name: Copier build React → electron/renderer
         run: xcopy /E /I /Y douanes-app\dist electron\renderer
 
-      # ✅ Suppression des icônes problématiques (inchangé)
       - name: Supprimer icônes problématiques
         run: |
-          Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force
-          Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force
+          Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force -ErrorAction SilentlyContinue
+          Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force -ErrorAction SilentlyContinue
 
-      # ✅ Plus besoin de nettoyer le cache npm manuellement grâce au cache Action
       - name: Générer le Setup Windows
         run: |
           cd electron
@@ -156,95 +113,3 @@ jobs:
           name: DouaneGestion-Setup-Windows
           path: electron/dist/*.exe
           retention-days: 30
-
-  # ════════════════════════════════════════════
-  # ⚛️ ELECTRON LINUX → AppImage + .deb
-  # ════════════════════════════════════════════
-  build-linux:
-    name: ⚛️ Electron → AppImage + deb Linux
-    runs-on: ubuntu-20.04
-    needs: build-backend-linux
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      # ✅ CACHE npm React (douanes-app)
-      - name: Cache npm (React)
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-react-linux-${{ hashFiles('douanes-app/package-lock.json') }}
-          restore-keys: npm-react-linux-
-
-      # ✅ CACHE npm Electron
-      - name: Cache npm (Electron)
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-electron-linux-${{ hashFiles('electron/package-lock.json') }}
-          restore-keys: npm-electron-linux-
-
-      # ✅ Cache apt-get pour les dépendances système
-      - name: Cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: apt-linux-${{ runner.os }}-electron-deps
-
-      - name: Installer dépendances système Linux
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libarchive-tools \
-            rpm \
-            fakeroot \
-            libgtk-3-0 \
-            libnotify-dev \
-            libnss3 \
-            libxss1 \
-            libxtst6
-
-      - name: Récupérer backend Linux
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-exe-linux
-          path: electron/resources/backend/
-
-      - name: Rendre le backend exécutable
-        run: chmod +x electron/resources/backend/run
-
-      - name: Build React (Vite)
-        run: |
-          cd douanes-app
-          npm ci
-          npm run build
-
-      - name: Copier build React → electron/renderer
-        run: cp -r douanes-app/dist/. electron/renderer/
-
-      - name: Générer AppImage + deb
-        run: |
-          cd electron
-          npm ci
-          npx electron-builder --linux --x64 --publish=never
-        env:
-          GH_TOKEN: ""
-          GITHUB_TOKEN: ""
-
-      - name: 📦 Publier AppImage Linux
-        uses: actions/upload-artifact@v4
-        with:
-          name: DouaneGestion-Linux-AppImage
-          path: electron/dist/*.AppImage
-          retention-days: 30
-
-      - name: 📦 Publier deb Linux
-        uses: actions/upload-artifact@v4
-        with:
-          name: DouaneGestion-Linux-deb
-          path: electron/dist/*.deb
-          retention-days: 30
-          
