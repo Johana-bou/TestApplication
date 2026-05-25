@@ -71,7 +71,7 @@ jobs:
             --hidden-import=uvicorn.protocols.websockets `
             --hidden-import=uvicorn.logging `
             --add-data "app;app" `
-            --add-data ".env;."
+            --add-data ".env;." `
             --add-data "douanes.db;." `
             --add-data "scripts;scripts" `
             run.py --clean --noconfirm
