@@ -2,6 +2,11 @@ import sys
 import os
 import uvicorn
 
+# Forcer l'encodage UTF-8 pour les consoles Windows
+if sys.platform == "win32":
+    sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8', errors='replace')
+    sys.stderr = open(sys.stderr.fileno(), mode='w', encoding='utf-8', errors='replace')
+
 # Résolution des chemins
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
@@ -22,10 +27,17 @@ PORT = int(os.environ.get('PORT', 8000))
 
 # Importer l'application FastAPI
 try:
-    from app.main import app
-    print("✅ Application FastAPI chargée avec succès")
+    import app.main
+    print("[OK] Module app.main importé")
+    if hasattr(app.main, 'app'):
+        app = app.main.app
+        print("[OK] Objet 'app' trouvé")
+    else:
+        print("[ERREUR] L'objet 'app' n'existe pas dans app.main")
+        print("Contenu de app.main :", dir(app.main))
+        sys.exit(1)
 except Exception as e:
-    print(f"❌ Erreur lors du chargement de l'application : {e}")
+    print(f"[ERREUR] Exception lors de l'import: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
@@ -33,7 +45,7 @@ except Exception as e:
 # Démarrer le serveur
 if __name__ == '__main__':
     uvicorn.run(
-        app,           # Objet app directement
+        app,
         host='127.0.0.1',
         port=PORT,
         reload=False,
