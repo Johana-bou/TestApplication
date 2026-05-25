@@ -13,7 +13,7 @@ function getBackendPath() {
   const exeName = process.platform === 'win32' ? 'run.exe' : 'run';
 
   if (app.isPackaged) {
-    // En production : dans les ressources embarquées
+    // En production : le backend est dans les ressources (app.asar.unpacked/resources/backend)
     return path.join(process.resourcesPath, 'backend', exeName);
   } else {
     // En développement local
@@ -40,7 +40,6 @@ function startBackend() {
     env: {
       ...process.env,
       PORT: String(API_PORT),
-      // Variables d'environnement embarquées
       APP_ENV: 'production',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -88,46 +87,13 @@ function waitForBackend(retries = 30) {
       }
     };
 
-    setTimeout(check, 1500); // Laisser le temps au .exe de démarrer
+    setTimeout(check, 1500);
   });
 }
 
 // ── Créer la fenêtre principale ───────────────────────────────
 async function createWindow() {
-  // Splash screen pendant le démarrage
-  const splash = new BrowserWindow({
-    width: 400,
-    height: 300,
-    frame: false,
-    alwaysOnTop: true,
-    transparent: true,
-  });
-  splash.loadURL(`data:text/html,
-    <body style="background:#1a1a2e;display:flex;align-items:center;
-                 justify-content:center;height:100vh;margin:0;
-                 font-family:sans-serif;color:white;border-radius:12px">
-      <div style="text-align:center">
-        <h2>DouaneGestion</h2>
-        <p>Démarrage en cours...</p>
-      </div>
-    </body>
-  `);
-
   const backendReady = await waitForBackend();
-
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 1024,
-    minHeight: 600,
-    title: 'DouaneGestion',
-    show: false,   // Cacher jusqu'à ce que tout soit prêt
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-    },
-  });
 
   if (!backendReady) {
     dialog.showErrorBox(
@@ -138,6 +104,20 @@ async function createWindow() {
     return;
   }
 
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    minWidth: 1024,
+    minHeight: 600,
+    title: 'DouaneGestion',
+    show: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      // preload supprimé (fichier absent)
+    },
+  });
+
   const startUrl = app.isPackaged
     ? `file://${path.join(__dirname, 'renderer', 'index.html')}`
     : 'http://localhost:5173';
@@ -145,8 +125,6 @@ async function createWindow() {
   mainWindow.loadURL(startUrl);
 
   mainWindow.once('ready-to-show', () => {
-    splash.destroy();
-    mainWindow.show();
     mainWindow.maximize();
   });
 }
