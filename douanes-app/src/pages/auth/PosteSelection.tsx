@@ -4,7 +4,7 @@ import { getPostes, type Poste } from '../../api/auth.api'
 import { useAuthStore } from '../../store/authStore'
 import { Spinner } from '../../components/ui/Spinner'
 
-// ✅ Fallback avec noms complets
+// ✅ Fallback avec noms complets identiques au seed
 const POSTES_FALLBACK: Poste[] = [
   { id_poste: 1, code_poste: '488', nom_poste: 'Recette principale des Douanes de MAROUA', adresse: 'Maroua, Extrême-Nord, Cameroun' },
   { id_poste: 2, code_poste: '490', nom_poste: 'Recette principale des Douanes de LIMANI', adresse: 'Limani, Extrême-Nord, Cameroun' },
@@ -24,8 +24,7 @@ export default function PosteSelection() {
   const { data: postes, isLoading, isError } = useQuery({
     queryKey: ['postes-public'],
     queryFn: getPostes,
-    retry: 2,           // ✅ 2 tentatives au lieu de 1
-    retryDelay: 2000,   // ✅ Attendre 2s entre chaque tentative
+    retry: 1,
   })
 
   const listePostes = (isError || !postes || postes.length === 0) ? POSTES_FALLBACK : postes
@@ -153,10 +152,8 @@ export default function PosteSelection() {
                       {poste.adresse && (
                         <p style={{ color: '#bbb', fontSize: 11, marginBottom: 12 }}>{poste.adresse}</p>
                       )}
-                      <button
-                        className="btn btn-primary btn-block font-weight-600"
-                        onClick={() => handleSelectPoste(poste)}
-                      >
+                      <button className="btn btn-primary btn-block font-weight-600"
+                        onClick={() => handleSelectPoste(poste)}>
                         Accéder
                       </button>
                     </div>

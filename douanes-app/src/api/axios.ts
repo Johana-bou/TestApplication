@@ -3,7 +3,7 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
 
-// ✅ 127.0.0.1 au lieu de localhost — plus fiable dans Electron packagé
+// ✅ 127.0.0.1 au lieu de localhost (plus fiable dans Electron/Windows)
 const api = axios.create({ baseURL: 'http://127.0.0.1:8000' })
 
 api.interceptors.request.use((config) => {
