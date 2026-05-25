@@ -24,8 +24,6 @@ ordered-set==4.1.0
 packaging==26.0
 passlib==1.7.4
 pillow==10.4.0
-pip==25.0.1
-pkg_resources==0.0.0
 pyasn1==0.6.3
 pycparser==2.23
 pydantic==2.5.0
