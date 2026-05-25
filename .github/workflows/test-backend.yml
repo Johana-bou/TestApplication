@@ -1,0 +1,72 @@
+name: Test Backend Compilation
+
+on:
+  workflow_dispatch:  # déclenchement manuel depuis l'onglet Actions
+
+jobs:
+  test-backend:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer dépendances (sans versions figées)
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-dotenv python-multipart email-validator python-jose "passlib[bcrypt]" cryptography anyio click h11 jinja2 weasyprint reportlab pillow pymysql pypdf2 pylatex bcrypt
+          pip install pyinstaller
+
+      - name: Compiler en .exe (onefile)
+        run: |
+          cd backend
+          pyinstaller --onefile --name run --console `
+            --collect-all uvicorn `
+            --collect-all fastapi `
+            --collect-all starlette `
+            --collect-all pydantic `
+            --collect-all anyio `
+            --collect-all click `
+            --collect-all h11 `
+            --collect-all sqlalchemy `
+            --hidden-import=uvicorn.lifespan.on `
+            --hidden-import=uvicorn.lifespan.off `
+            --hidden-import=uvicorn.loops.auto `
+            --hidden-import=uvicorn.protocols.http `
+            --hidden-import=uvicorn.protocols.websockets `
+            --hidden-import=uvicorn.logging `
+            --add-data "app;app" `
+            --add-data ".env;." `
+            --add-data "douanes.db;." `
+            run.py --clean --noconfirm
+
+      - name: Tester l'exécutable
+        run: |
+          cd backend/dist
+          # Lancer l'exe en arrière-plan et capturer les sorties
+          $process = Start-Process -FilePath .\run.exe -NoNewWindow -PassThru -RedirectStandardOutput stdout.txt -RedirectStandardError stderr.txt
+          Start-Sleep -Seconds 8
+          # Afficher les sorties
+          Write-Host "=== STDOUT ==="
+          Get-Content stdout.txt -ErrorAction SilentlyContinue
+          Write-Host "=== STDERR ==="
+          Get-Content stderr.txt -ErrorAction SilentlyContinue
+          # Arrêter le processus
+          Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+          # Vérifier les erreurs critiques
+          if (Select-String -Path stderr.txt -Pattern "ModuleNotFoundError|No module|Error|Exception" -Quiet) {
+            Write-Error "Des erreurs ont été détectées dans la sortie d'erreur"
+            exit 1
+          }
+          Write-Host "✅ Le backend a démarré sans erreur critique"
+
+      - name: Upload de l'exécutable (optionnel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-exe-test
+          path: backend/dist/run.exe
+          retention-days: 1
