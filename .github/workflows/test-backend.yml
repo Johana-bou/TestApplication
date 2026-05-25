@@ -18,7 +18,7 @@ jobs:
         run: |
           cd backend
           pip install --upgrade pip
-          pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-dotenv python-multipart email-validator python-jose "passlib[bcrypt]" cryptography anyio click h11 jinja2 weasyprint reportlab pillow pymysql pypdf2 pylatex bcrypt
+          pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-dotenv python-multipart email-validator python-jose "passlib[bcrypt]" cryptography anyio click h11 jinja2 weasyprint reportlab pillow pymysql PyPDF2 pylatex bcrypt
           pip install pyinstaller
 
       - name: Compiler en .exe (onefile)
@@ -43,7 +43,7 @@ jobs:
             --collect-all weasyprint `
             --collect-all pillow `
             --collect-all pymysql `
-            --collect-all pypdf2 `
+            --collect-all PyPDF2 `
             --collect-all pylatex `
             --collect-all jinja2 `
             --collect-all markupsafe `
@@ -55,6 +55,8 @@ jobs:
             --collect-all fonttools `
             --collect-all brotli `
             --collect-all zopfli `
+            --collect-all cairocffi `
+            --collect-all cairo `
             --hidden-import=jose.jwt `
             --hidden-import=jose.exceptions `
             --hidden-import=jose.constants `
