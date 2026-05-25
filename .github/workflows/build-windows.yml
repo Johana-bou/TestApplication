@@ -13,9 +13,6 @@ env:
 
 jobs:
 
-  # ════════════════════════════════════════════
-  # 🐍 BACKEND WINDOWS → run.exe
-  # ════════════════════════════════════════════
   build-backend-windows:
     name: 🐍 Backend Windows → .exe
     runs-on: windows-latest
@@ -26,7 +23,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Cache pip (Windows)
+      - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\pip\Cache
@@ -38,19 +35,15 @@ jobs:
           cd backend
           pip install -r requirements.txt
           pip install pyinstaller
+          # Vérifier que uvicorn est bien installé avec ses métadonnées
+          pip show uvicorn
 
-      - name: Compiler en .exe autonome (commande directe)
+      - name: Compiler en .exe autonome (sans spec)
         run: |
           cd backend
+          # Supprimer tout spec préexistant
+          Remove-Item -Force *.spec -ErrorAction SilentlyContinue
           pyinstaller --onefile --name run --console `
-            --copy-metadata uvicorn `
-            --copy-metadata fastapi `
-            --copy-metadata starlette `
-            --copy-metadata pydantic `
-            --copy-metadata anyio `
-            --copy-metadata click `
-            --copy-metadata h11 `
-            --copy-metadata sqlalchemy `
             --collect-all uvicorn `
             --collect-all fastapi `
             --collect-all starlette `
@@ -76,9 +69,6 @@ jobs:
           path: backend/dist/run.exe
           retention-days: 1
 
-  # ════════════════════════════════════════════
-  # ⚛️ ELECTRON WINDOWS → Setup NSIS .exe
-  # ════════════════════════════════════════════
   build-windows:
     name: ⚛️ Electron → Setup Windows
     runs-on: windows-latest
@@ -90,14 +80,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Cache npm (React)
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\npm-cache
-          key: npm-react-windows-v2-${{ hashFiles('douanes-app/package-lock.json') }}
-          restore-keys: npm-react-windows-v2-
-
-      - name: Cache npm (Electron)
+      - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\npm-cache
