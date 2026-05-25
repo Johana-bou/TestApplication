@@ -3,7 +3,8 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '../store/authStore'
 
-const api = axios.create({ baseURL: 'http://localhost:8000' })
+// ✅ 127.0.0.1 au lieu de localhost — plus fiable dans Electron packagé
+const api = axios.create({ baseURL: 'http://127.0.0.1:8000' })
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
@@ -22,21 +23,16 @@ api.interceptors.response.use(
 
     if (status === 401) {
       if (isAuthRoute) {
-        // Ne pas rediriger — onError dans Login.tsx affichera le message
         return Promise.reject(error)
       }
-      // Session expirée sur une route protégée
       useAuthStore.getState().logout()
       window.location.href = '/'
       toast.error('Session expirée, veuillez vous reconnecter')
-
     } else if (status === 403) {
       if (isAuthRoute) {
-        // Laisser Login.tsx afficher "Vous n'êtes pas affecté au poste X"
         return Promise.reject(error)
       }
       toast.error(error.response?.data?.detail || 'Accès non autorisé')
-
     } else if (status === 422) {
       const details = error.response.data?.detail
       if (Array.isArray(details)) {
@@ -48,11 +44,9 @@ api.interceptors.response.use(
       } else {
         toast.error('Données invalides')
       }
-
     } else if (status && status >= 500) {
       toast.error("Erreur serveur — contactez l'administrateur")
     }
-
     return Promise.reject(error)
   }
 )
