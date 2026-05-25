@@ -35,7 +35,26 @@ jobs:
             --collect-all sqlalchemy `
             --collect-all jose `
             --collect-all python_jose `
-            --hidden-import=jose `
+            --collect-all passlib `
+            --collect-all bcrypt `
+            --collect-all cryptography `
+            --collect-all cffi `
+            --collect-all reportlab `
+            --collect-all weasyprint `
+            --collect-all pillow `
+            --collect-all pymysql `
+            --collect-all pypdf2 `
+            --collect-all pylatex `
+            --collect-all jinja2 `
+            --collect-all markupsafe `
+            --collect-all importlib_metadata `
+            --collect-all zipp `
+            --collect-all cssselect2 `
+            --collect-all tinycss2 `
+            --collect-all pydyf `
+            --collect-all fonttools `
+            --collect-all brotli `
+            --collect-all zopfli `
             --hidden-import=jose.jwt `
             --hidden-import=jose.exceptions `
             --hidden-import=jose.constants `
@@ -43,10 +62,6 @@ jobs:
             --hidden-import=jose.backends `
             --hidden-import=jose.backends.base `
             --hidden-import=jose.backends.cryptography_backend `
-            --collect-all passlib `
-            --collect-all bcrypt `
-            --collect-all cryptography `
-            --collect-all cffi `
             --hidden-import=uvicorn.lifespan.on `
             --hidden-import=uvicorn.lifespan.off `
             --hidden-import=uvicorn.loops.auto `
