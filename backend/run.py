@@ -2,30 +2,38 @@ import sys
 import os
 import uvicorn
 
-# ── Résolution des chemins (PyInstaller compatible) ───────────
+# Résolution des chemins
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Ajout du dossier de base dans le chemin des modules
 sys.path.insert(0, BASE_DIR)
 
-# ── Charger les variables d'environnement ─────────────────────
+# Charger les variables d'environnement
 from dotenv import load_dotenv
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-# ── Forcer SQLAlchemy à trouver la DB au bon endroit ──────────
+# Configurer la base de données
 DB_PATH = os.path.join(BASE_DIR, 'douanes.db')
 os.environ.setdefault('DATABASE_URL', f'sqlite:///{DB_PATH}')
 
-# ── Lire le port depuis la variable d'env ─────────────────────
 PORT = int(os.environ.get('PORT', 8000))
 
-# ── Démarrage Uvicorn ─────────────────────────────────────────
+# Importer l'application FastAPI
+try:
+    from app.main import app
+    print("✅ Application FastAPI chargée avec succès")
+except Exception as e:
+    print(f"❌ Erreur lors du chargement de l'application : {e}")
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+
+# Démarrer le serveur
 if __name__ == '__main__':
     uvicorn.run(
-        'app.main:app',
+        app,           # Objet app directement
         host='127.0.0.1',
         port=PORT,
         reload=False,
