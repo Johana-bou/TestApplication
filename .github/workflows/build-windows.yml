@@ -30,18 +30,17 @@ jobs:
           key: pip-windows-v3-${{ hashFiles('backend/requirements.txt') }}
           restore-keys: pip-windows-v3-
 
-      - name: Installer dépendances (sans versions figées) + PyInstaller
+      - name: Installer dépendances + PyInstaller
         run: |
           cd backend
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-          pip list  # Affiche les packages installés (debug)
+          pip list
 
-      - name: Compiler en .exe autonome (commande directe, sans spec)
+      - name: Compiler en .exe autonome (commande complète)
         run: |
           cd backend
-          # Supprimer tout fichier .spec résiduel
           Remove-Item -Force *.spec -ErrorAction SilentlyContinue
           pyinstaller --onefile --name run --console `
             --collect-all uvicorn `
@@ -52,6 +51,37 @@ jobs:
             --collect-all click `
             --collect-all h11 `
             --collect-all sqlalchemy `
+            --collect-all jose `
+            --collect-all python_jose `
+            --collect-all passlib `
+            --collect-all bcrypt `
+            --collect-all cryptography `
+            --collect-all cffi `
+            --collect-all reportlab `
+            --collect-all weasyprint `
+            --collect-all pillow `
+            --collect-all pymysql `
+            --collect-all PyPDF2 `
+            --collect-all pylatex `
+            --collect-all jinja2 `
+            --collect-all markupsafe `
+            --collect-all importlib_metadata `
+            --collect-all zipp `
+            --collect-all cssselect2 `
+            --collect-all tinycss2 `
+            --collect-all pydyf `
+            --collect-all fonttools `
+            --collect-all brotli `
+            --collect-all zopfli `
+            --collect-all cairocffi `
+            --collect-all cairo `
+            --hidden-import=jose.jwt `
+            --hidden-import=jose.exceptions `
+            --hidden-import=jose.constants `
+            --hidden-import=jose.utils `
+            --hidden-import=jose.backends `
+            --hidden-import=jose.backends.base `
+            --hidden-import=jose.backends.cryptography_backend `
             --hidden-import=uvicorn.lifespan.on `
             --hidden-import=uvicorn.lifespan.off `
             --hidden-import=uvicorn.loops.auto `
@@ -61,6 +91,7 @@ jobs:
             --add-data "app;app" `
             --add-data ".env;." `
             --add-data "douanes.db;." `
+            --add-data "scripts;scripts" `
             run.py --clean --noconfirm
 
       - uses: actions/upload-artifact@v4
