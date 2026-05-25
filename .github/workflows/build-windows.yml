@@ -27,21 +27,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\pip\Cache
-          key: pip-windows-v2-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: pip-windows-v2-
+          key: pip-windows-v3-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: pip-windows-v3-
 
-      - name: Installer dépendances + PyInstaller
+      - name: Installer dépendances (sans versions figées) + PyInstaller
         run: |
           cd backend
+          pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-          # Vérifier que uvicorn est bien installé avec ses métadonnées
-          pip show uvicorn
+          pip list  # Affiche les packages installés (debug)
 
-      - name: Compiler en .exe autonome (sans spec)
+      - name: Compiler en .exe autonome (commande directe, sans spec)
         run: |
           cd backend
-          # Supprimer tout spec préexistant
+          # Supprimer tout fichier .spec résiduel
           Remove-Item -Force *.spec -ErrorAction SilentlyContinue
           pyinstaller --onefile --name run --console `
             --collect-all uvicorn `
