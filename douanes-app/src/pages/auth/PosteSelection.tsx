@@ -4,9 +4,10 @@ import { getPostes, type Poste } from '../../api/auth.api'
 import { useAuthStore } from '../../store/authStore'
 import { Spinner } from '../../components/ui/Spinner'
 
+// ✅ Fallback avec noms complets
 const POSTES_FALLBACK: Poste[] = [
-  { id_poste: 1, code_poste: '488', nom_poste: 'MAROUA' },
-  { id_poste: 2, code_poste: '490', nom_poste: 'LIMANI' },
+  { id_poste: 1, code_poste: '488', nom_poste: 'Recette principale des Douanes de MAROUA', adresse: 'Maroua, Extrême-Nord, Cameroun' },
+  { id_poste: 2, code_poste: '490', nom_poste: 'Recette principale des Douanes de LIMANI', adresse: 'Limani, Extrême-Nord, Cameroun' },
 ]
 
 const FILIGRANE_POSITIONS = Array.from({ length: 24 }, (_, i) => ({
@@ -23,7 +24,8 @@ export default function PosteSelection() {
   const { data: postes, isLoading, isError } = useQuery({
     queryKey: ['postes-public'],
     queryFn: getPostes,
-    retry: 1,
+    retry: 2,           // ✅ 2 tentatives au lieu de 1
+    retryDelay: 2000,   // ✅ Attendre 2s entre chaque tentative
   })
 
   const listePostes = (isError || !postes || postes.length === 0) ? POSTES_FALLBACK : postes
@@ -74,7 +76,7 @@ export default function PosteSelection() {
         overflow: 'hidden',
       }}>
 
-        {/*  Logo en filigrane centré DANS le grand div */}
+        {/* Logo en filigrane centré DANS le grand div */}
         <img
           src="/vendors/images/logo-tresor.png"
           alt=""
@@ -104,7 +106,7 @@ export default function PosteSelection() {
             <p style={{ color: 'rgba(26, 6, 6, 0.9)', fontWeight: 800, fontSize: 15, margin: '6px 0 0' }}>
               Secteur de l'Extrême-Nord — Cameroun
             </p>
-            <p style={{ color: 'rgba(15, 3, 3, 1)', fontWeight: 800,fontSize: 12, margin: '4px 0 0' }}>
+            <p style={{ color: 'rgba(15, 3, 3, 1)', fontWeight: 800, fontSize: 12, margin: '4px 0 0' }}>
               REPUBLIQUE DU CAMEROUN — Direction Générale des Douanes
             </p>
           </div>
@@ -151,8 +153,10 @@ export default function PosteSelection() {
                       {poste.adresse && (
                         <p style={{ color: '#bbb', fontSize: 11, marginBottom: 12 }}>{poste.adresse}</p>
                       )}
-                      <button className="btn btn-primary btn-block font-weight-600"
-                        onClick={() => handleSelectPoste(poste)}>
+                      <button
+                        className="btn btn-primary btn-block font-weight-600"
+                        onClick={() => handleSelectPoste(poste)}
+                      >
                         Accéder
                       </button>
                     </div>
