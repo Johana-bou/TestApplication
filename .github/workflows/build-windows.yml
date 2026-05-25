@@ -39,10 +39,36 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Compiler en .exe autonome
+      - name: Compiler en .exe autonome (commande directe)
         run: |
           cd backend
-          pyinstaller run.spec --clean --noconfirm
+          pyinstaller --onefile --name run --console `
+            --copy-metadata uvicorn `
+            --copy-metadata fastapi `
+            --copy-metadata starlette `
+            --copy-metadata pydantic `
+            --copy-metadata anyio `
+            --copy-metadata click `
+            --copy-metadata h11 `
+            --copy-metadata sqlalchemy `
+            --collect-all uvicorn `
+            --collect-all fastapi `
+            --collect-all starlette `
+            --collect-all pydantic `
+            --collect-all anyio `
+            --collect-all click `
+            --collect-all h11 `
+            --collect-all sqlalchemy `
+            --hidden-import=uvicorn.lifespan.on `
+            --hidden-import=uvicorn.lifespan.off `
+            --hidden-import=uvicorn.loops.auto `
+            --hidden-import=uvicorn.protocols.http `
+            --hidden-import=uvicorn.protocols.websockets `
+            --hidden-import=uvicorn.logging `
+            --add-data "app;app" `
+            --add-data ".env;." `
+            --add-data "douanes.db;." `
+            run.py --clean --noconfirm
 
       - uses: actions/upload-artifact@v4
         with:
