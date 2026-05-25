@@ -11,12 +11,9 @@ const API_PORT = 8000;
 // ── Trouver le backend embarqué ───────────────────────────────
 function getBackendPath() {
   const exeName = process.platform === 'win32' ? 'run.exe' : 'run';
-
   if (app.isPackaged) {
-    // En production : le backend est dans les ressources (app.asar.unpacked/resources/backend)
     return path.join(process.resourcesPath, 'backend', exeName);
   } else {
-    // En développement local
     return path.join(__dirname, '..', 'backend', 'dist', exeName);
   }
 }
@@ -26,10 +23,7 @@ function startBackend() {
   const backendPath = getBackendPath();
 
   if (!fs.existsSync(backendPath)) {
-    dialog.showErrorBox(
-      'Erreur démarrage',
-      `Backend introuvable :\n${backendPath}`
-    );
+    dialog.showErrorBox('Erreur démarrage', `Backend introuvable :\n${backendPath}`);
     app.quit();
     return;
   }
@@ -54,7 +48,7 @@ function startBackend() {
 }
 
 // ── Attendre que FastAPI réponde ──────────────────────────────
-function waitForBackend(retries = 30) {
+function waitForBackend(retries = 60) {  // ✅ 60 tentatives = 60 secondes max
   return new Promise((resolve) => {
     let attempts = 0;
 
@@ -70,7 +64,7 @@ function waitForBackend(retries = 30) {
           }
         }
       );
-      req.setTimeout(1000);
+      req.setTimeout(2000);
       req.on('error', retry);
       req.on('timeout', () => { req.destroy(); retry(); });
       req.end();
@@ -79,7 +73,7 @@ function waitForBackend(retries = 30) {
     const retry = () => {
       attempts++;
       if (attempts >= retries) {
-        console.error('[Electron] ❌ Backend timeout');
+        console.error('[Electron] ❌ Backend timeout après 60s');
         resolve(false);
       } else {
         console.log(`[Electron] ⏳ (${attempts}/${retries}) Attente backend...`);
@@ -87,13 +81,36 @@ function waitForBackend(retries = 30) {
       }
     };
 
-    setTimeout(check, 1500);
+    // ✅ Attendre 3s avant le premier check (le backend a besoin de temps pour démarrer)
+    setTimeout(check, 3000);
   });
 }
 
 // ── Créer la fenêtre principale ───────────────────────────────
 async function createWindow() {
+  // ✅ D'abord une fenêtre de chargement
+  let loadingWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    alwaysOnTop: true,
+    webPreferences: { nodeIntegration: true, contextIsolation: false }
+  });
+
+  loadingWindow.loadURL(`data:text/html,
+    <html>
+      <body style="background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:Arial">
+        <h2 style="color:#fff;margin-bottom:10px">DouaneGestion</h2>
+        <p style="color:#aaa">Démarrage en cours...</p>
+        <p style="color:#666;font-size:12px">Initialisation de la base de données</p>
+      </body>
+    </html>
+  `);
+
   const backendReady = await waitForBackend();
+
+  loadingWindow.close();
+  loadingWindow = null;
 
   if (!backendReady) {
     dialog.showErrorBox(
@@ -110,11 +127,10 @@ async function createWindow() {
     minWidth: 1024,
     minHeight: 600,
     title: 'DouaneGestion',
-    show: true,
+    show: false,  // ✅ Ne montre la fenêtre qu'une fois prête
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // preload supprimé (fichier absent)
     },
   });
 
@@ -124,15 +140,17 @@ async function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
+  // ✅ Affiche la fenêtre seulement quand elle est prête
   mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
     mainWindow.maximize();
   });
 }
 
 // ── Cycle de vie ──────────────────────────────────────────────
 app.whenReady().then(() => {
-  startBackend();
-  createWindow();
+  startBackend();          // ✅ Lance le backend
+  createWindow();          // ✅ Attend que le backend soit prêt avant d'afficher
 });
 
 app.on('will-quit', () => {
