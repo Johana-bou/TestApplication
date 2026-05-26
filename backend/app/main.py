@@ -32,84 +32,131 @@ from app.models import (
     EtatEncaissement, AuditLog, Notification, ConfigImpression
 )
 
-# ── Gestion du chargement de seed ────────────────────────────
+# ── Seed intégré directement — pas de dépendance externe ─────
+def _run_seed(db):
+    """Initialise la BD avec les données de base"""
+    from app.security.jwt import get_password_hash
+    from datetime import date
+    try:
+        print("⚙️  Création des postes...")
+        poste1 = Poste(
+            code_poste="488",
+            nom_poste="Recette principale des Douanes de MAROUA",
+            adresse="Maroua, Extreme-Nord, Cameroun"
+        )
+        poste2 = Poste(
+            code_poste="490",
+            nom_poste="Recette principale des Douanes de LIMANI",
+            adresse="Limani, Extreme-Nord, Cameroun"
+        )
+        db.add_all([poste1, poste2])
+        db.flush()
+        print(f"  [OK] {poste1.nom_poste}")
+        print(f"  [OK] {poste2.nom_poste}")
+
+        print("⚙️  Création des comptes...")
+        comptes = [
+            Compte(num_compte="4121226488", nom_compte="Recette douane MAROUA", id_poste=poste1.id_poste),
+            Compte(num_compte="4121226490", nom_compte="Recette douane LIMANI", id_poste=poste2.id_poste),
+            Compte(num_compte="4711", nom_compte="Caisse des Douanes", id_poste=None),
+            Compte(num_compte="4712", nom_compte="Caisse des Douanes - Regionale", id_poste=None),
+            Compte(num_compte="5111", nom_compte="Virements recus", id_poste=None),
+            Compte(num_compte="5112", nom_compte="Cheques recus", id_poste=None),
+            Compte(num_compte="5211", nom_compte="Recettes diverses", id_poste=None),
+        ]
+        db.add_all(comptes)
+        db.flush()
+        print(f"  [OK] {len(comptes)} comptes créés")
+
+        print("⚙️  Création des unités...")
+        unites = []
+        for poste in [poste1, poste2]:
+            for nom in ["Bureau des operations", "Service contentieux", "Bureau des douanes", "Service recettes"]:
+                unites.append(Unite(id_poste=poste.id_poste, nom_unite=nom))
+        db.add_all(unites)
+        db.flush()
+        print(f"  [OK] {len(unites)} unités créées")
+
+        print("⚙️  Création de l'administrateur...")
+        admin = Utilisateur(
+            nom="ADMIN",
+            prenom="Systeme",
+            pseudo="admin",
+            email="admin@douane.cm",
+            mot_de_passe=get_password_hash("douane2026"),
+            role="ADMIN",
+            poste_id=poste1.id_poste,
+            actif=True
+        )
+        db.add(admin)
+        db.flush()
+
+        # Affectation admin aux deux postes
+        db.add(Affectation(id_user=admin.id_user, id_poste=poste1.id_poste, date_debut=date.today()))
+        db.add(Affectation(id_user=admin.id_user, id_poste=poste2.id_poste, date_debut=date.today()))
+        print("  [OK] admin / douane2026")
+
+        print("⚙️  Création des configurations d'impression...")
+        configs = [
+            ConfigImpression(
+                id_poste=poste1.id_poste,
+                logo_path=None,
+                entete="RECETTE PRINCIPALE DES DOUANES DE MAROUA",
+                pied_page="Document officiel - Direction Generale des Douanes",
+                nom_receveur="Chef de Poste MAROUA",
+                grade_receveur="Inspecteur Principal des Douanes"
+            ),
+            ConfigImpression(
+                id_poste=poste2.id_poste,
+                logo_path=None,
+                entete="RECETTE PRINCIPALE DES DOUANES DE LIMANI",
+                pied_page="Document officiel - Direction Generale des Douanes",
+                nom_receveur="Chef de Poste LIMANI",
+                grade_receveur="Inspecteur Principal des Douanes"
+            ),
+        ]
+        db.add_all(configs)
+
+        db.commit()
+        print("\n✅ Base de données initialisée avec succès !")
+        print("   Identifiants : admin / douane2026")
+
+    except Exception as e:
+        print(f"❌ Erreur lors du seed: {e}")
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+
 def seed_if_empty():
+    """Vérifie si la BD est vide et lance le seed si nécessaire"""
     db = SessionLocal()
     try:
+        # ✅ Crée les tables d'abord
+        Base.metadata.create_all(bind=engine)
         count = db.query(Poste).count()
         if count == 0:
-            try:
-                # ✅ Résolution du chemin compatible PyInstaller
-                if getattr(sys, 'frozen', False):
-                    scripts_dir = os.path.join(sys._MEIPASS, 'scripts')
-                    sys.path.insert(0, sys._MEIPASS)
-                else:
-                    scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts')
-                    sys.path.insert(0, os.path.dirname(scripts_dir))
-
-                from scripts.seed_data import seed_database
-                seed_database()
-                print("✅ Données initiales créées avec succès")
-            except ImportError as e:
-                print(f"⚠️ Module scripts.seed_data introuvable: {e}")
-                # ✅ Fallback : créer uniquement l'admin si le seed échoue
-                _create_admin_fallback(db)
-            except Exception as e:
-                print(f"❌ Erreur lors du seed: {e}")
-                import traceback
-                traceback.print_exc()
+            print("\n📦 Base de données vide — initialisation en cours...")
+            _run_seed(db)
         else:
             print(f"✅ Base de données déjà initialisée ({count} postes)")
     except Exception as e:
-        print(f"❌ Erreur de connexion ou de vérification: {e}")
+        print(f"❌ Erreur seed_if_empty: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         db.close()
 
-def _create_admin_fallback(db):
-    """Crée un admin minimal si le seed complet échoue"""
-    try:
-        from app.security.jwt import get_password_hash
-        # Créer un poste par défaut
-        poste = db.query(Poste).first()
-        if not poste:
-            poste = Poste(
-                code_poste="488",
-                nom_poste="Recette principale des Douanes de MAROUA",
-                adresse="Maroua, Extreme-Nord, Cameroun"
-            )
-            db.add(poste)
-            db.flush()
-
-        # Créer l'admin si inexistant
-        admin_existe = db.query(Utilisateur).filter(Utilisateur.pseudo == "admin").first()
-        if not admin_existe:
-            admin = Utilisateur(
-                nom="ADMIN",
-                prenom="Systeme",
-                pseudo="admin",
-                email="admin@douane.cm",
-                mot_de_passe=get_password_hash("douane2026"),
-                role="ADMIN",
-                poste_id=poste.id_poste,
-                actif=True
-            )
-            db.add(admin)
-            db.commit()
-            print("✅ Admin créé (fallback) : admin / douane2026")
-    except Exception as e:
-        print(f"❌ Erreur fallback admin: {e}")
-        db.rollback()
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ✅ Création des tables en premier
+    print("\n🚀 Démarrage de l'application...")
+    # ✅ Création des tables
     Base.metadata.create_all(bind=engine)
     print("✅ Tables créées/vérifiées")
-    # ✅ Peuplement initial
+    # ✅ Seed si nécessaire
     seed_if_empty()
-    print("✅ Base de données prête")
+    print("✅ Base de données prête\n")
     yield
-    print("Arrêt de l'application")
+    print("🛑 Arrêt de l'application")
 
 # ── Application FastAPI ───────────────────────────────────────
 app = FastAPI(
