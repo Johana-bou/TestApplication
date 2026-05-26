@@ -48,8 +48,10 @@ def _enregistrer_polices():
     fonts/ est dans app/, un niveau au-dessus de utils/.
     Appelé une seule fois grâce au cache _polices_enregistrees.
     """
-    fonts_dir = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "fonts")
+    import sys as _sys
+    fonts_dir = os.path.join(
+        getattr(_sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "app", "fonts"
     )
 
     polices = {

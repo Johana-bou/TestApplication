@@ -56,8 +56,10 @@ def _charger_police_otf(nom_police: str, chemin: str) -> bool:
         return False
 
 def _enregistrer_polices():
-    fonts_dir = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "fonts")
+    import sys as _sys
+    fonts_dir = os.path.join(
+        getattr(_sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "app", "fonts"
     )
     polices = {
         "LMRoman":     ["lmroman12-regular.otf", "lmroman10-regular.otf"],
