@@ -2,19 +2,23 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from app.config import settings
+import bcrypt
 
-# Configuration du hashage des mots de passe
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ✅ Utilisation directe de bcrypt — évite le conflit passlib/bcrypt avec PyInstaller
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Vérifie si le mot de passe correspond au hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(
+        plain_password.encode('utf-8'),
+        hashed_password.encode('utf-8')
+    )
 
 def get_password_hash(password: str) -> str:
     """Génère un hash bcrypt du mot de passe"""
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Crée un token JWT d'accès"""
@@ -33,7 +37,6 @@ def decode_token(token: str) -> Optional[dict]:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError as e:
-        # Afficher l'erreur pour le débogage
         print(f"❌ Erreur décodage token: {e}")
         return None
 
