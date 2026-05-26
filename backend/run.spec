@@ -42,7 +42,7 @@ a = Analysis(
         'click', 'anyio', 'anyio._backends._asyncio', 'anyio.abc', 'sniffio',
         'email_validator',
         # ✅ Sécurité / Auth
-        'passlib', 'passlib.handlers', 'passlib.handlers.bcrypt',
+        'bcrypt',
         'jose', 'jose.jwt',
         'multipart', 'python_multipart',
         # ✅ Base de données
