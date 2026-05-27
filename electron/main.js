@@ -48,7 +48,7 @@ function startBackend() {
 }
 
 // ── Attendre que FastAPI réponde ──────────────────────────────
-function waitForBackend(retries = 60) {  // ✅ 60 tentatives = 60 secondes max
+function waitForBackend(retries = 60) { 
   return new Promise((resolve) => {
     let attempts = 0;
 
@@ -94,7 +94,8 @@ async function createWindow() {
     height: 300,
     frame: false,
     alwaysOnTop: true,
-    webPreferences: { nodeIntegration: true, contextIsolation: false }
+    webPreferences: { nodeIntegration: true, contextIsolation: false,   webviewTag: false,
+  nativeWindowOpen: true, }
   });
 
   loadingWindow.loadURL(`data:text/html,
@@ -127,7 +128,7 @@ async function createWindow() {
     minWidth: 1024,
     minHeight: 600,
     title: 'DouaneGestion',
-    show: false,  // ✅ Ne montre la fenêtre qu'une fois prête
+    show: false,  
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

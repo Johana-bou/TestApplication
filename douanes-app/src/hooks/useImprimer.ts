@@ -11,9 +11,11 @@ export function useImprimer() {
 
   const imprimer = async (url: string, orientation: Orientation = 'portrait') => {
     setEnCours(true)
-    const toastId = toast.loading('impression en cours...', { icon: '🖨️' })
+    const toastId = toast.loading('Génération du PDF...', { icon: '🖨️' })
+
     try {
-      const response = await axios.get(`http://localhost:8000${url}`, {
+      // ✅ 127.0.0.1 au lieu de localhost
+      const response = await axios.get(`http://127.0.0.1:8000${url}`, {
         responseType: 'blob',
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -21,54 +23,39 @@ export function useImprimer() {
       const blob = new Blob([response.data], { type: 'application/pdf' })
       const blobUrl = URL.createObjectURL(blob)
 
-      const iframe = document.createElement('iframe')
-      iframe.style.position = 'fixed'
-      iframe.style.top = '-1000px'
-      iframe.style.left = '-1000px'
-      iframe.style.width = '1px'
-      iframe.style.height = '1px'
-      iframe.style.border = 'none'
-      iframe.src = blobUrl
-      document.body.appendChild(iframe)
+      // ✅ Ouvre le PDF dans un nouvel onglet/fenêtre
+      // Dans Electron, ceci ouvre le PDF dans le visualiseur par défaut du système
+      const newWindow = window.open(blobUrl, '_blank')
 
-      iframe.onload = () => {
-        setTimeout(() => {
-          try {
-            // Injection de l'orientation via @page CSS dans l'iframe
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
-            if (iframeDoc) {
-              const style = iframeDoc.createElement('style')
-              style.textContent = `@page { size: A4 ${orientation === 'paysage' ? 'landscape' : 'portrait'}; }`
-              iframeDoc.head?.appendChild(style)
-            }
-
-            iframe.contentWindow?.focus()
-            iframe.contentWindow?.print()
-          } catch (err) {
-            console.error('Erreur impression:', err)
-            toast.error("Impossible d'ouvrir la boîte d'impression")
-          }
-        }, 500)
+      if (!newWindow) {
+        // ✅ Fallback : téléchargement direct si la fenêtre est bloquée
+        const link = document.createElement('a')
+        link.href = blobUrl
+        // Extrait le nom du fichier depuis l'URL (ex: /api/pv/1/pdf → PV_1.pdf)
+        const parts = url.split('/')
+        const id = parts[parts.findIndex(p => p === 'pdf') - 1] || 'document'
+        const type = parts[1] || 'document'
+        link.download = `${type}_${id}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        toast.dismiss(toastId)
+        toast.success('PDF téléchargé avec succès')
+      } else {
+        toast.dismiss(toastId)
+        toast.success('PDF ouvert — utilisez Ctrl+P pour imprimer')
       }
 
-      const handleAfterPrint = () => {
-        setTimeout(() => {
-          if (iframe?.parentNode) {
-            document.body.removeChild(iframe)
-          }
-          URL.revokeObjectURL(blobUrl)
-          window.removeEventListener('afterprint', handleAfterPrint)
-        }, 1000)
-      }
-      window.addEventListener('afterprint', handleAfterPrint)
+      // ✅ Nettoie le blob URL après 60 secondes
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
 
-      toast.dismiss(toastId)
-      toast.success('Document prêt à imprimer')
     } catch (error: unknown) {
       toast.dismiss(toastId)
       const err = error as { response?: { status: number; data?: { detail?: string } } }
       if (err.response?.status === 404) {
         toast.error('Document introuvable')
+      } else if (err.response?.status === 500) {
+        toast.error('Erreur lors de la génération du PDF — vérifiez les données')
       } else {
         toast.error('Erreur lors de la génération du PDF')
       }
