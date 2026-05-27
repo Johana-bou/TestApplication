@@ -1,18 +1,4 @@
 {
-  "name": "douane-gestion",
-  "version": "1.0.0",
-  "description": "Application de gestion douaniere",
-  "author": "DouaneGestion",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "build:win": "electron-builder --win --x64 --publish=never",
-    "build:linux": "electron-builder --linux --x64 --publish=never"
-  },
-  "devDependencies": {
-    "electron": "^30.0.0",
-    "electron-builder": "^24.13.0"
-  },
   "build": {
     "appId": "cm.douanegestion.app",
     "productName": "DouaneGestion",
@@ -41,11 +27,12 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
+      "perMachine": false,
       "runAfterFinish": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "DouaneGestion"
+      "shortcutName": "DouaneGestion",
+      "include": "installer.nsh"
     },
     "linux": {
       "target": [
