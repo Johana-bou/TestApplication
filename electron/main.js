@@ -63,26 +63,19 @@ function waitForBackend(retries = 60) {
   });
 }
 
-// ── IPC : Impression PDF via fichier temporaire ───────────────
+// ── IPC : Impression PDF DIRECTE (boîte dialogue système) ─────
 ipcMain.handle('print-pdf', async (event, { base64Data, fileName }) => {
   try {
-    const tmpDir = os.tmpdir();
-    const tmpFile = path.join(tmpDir, fileName || 'document.pdf');
-    const buffer = Buffer.from(base64Data, 'base64');
-    fs.writeFileSync(tmpFile, buffer);
-    console.log(`[Electron] PDF écrit : ${tmpFile}`);
-
-    const error = await shell.openPath(tmpFile);
-    if (error) {
-      console.error('[Electron] Erreur ouverture PDF:', error);
-      return { success: false, error };
-    }
-
-    setTimeout(() => {
-      try { fs.unlinkSync(tmpFile); } catch {}
-    }, 120000);
-
-    return { success: true, path: tmpFile };
+    // Fenêtre invisible pour charger le PDF
+    const win = new BrowserWindow({ show: false });
+    // Charger le PDF depuis une data URL base64
+    await win.loadURL(`data:application/pdf;base64,${base64Data}`);
+    // Déclencher directement la boîte de dialogue d'impression
+    win.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
+      if (!success) console.error(`[Electron] Échec impression: ${errorType}`);
+      win.destroy(); // fermer la fenêtre après impression
+    });
+    return { success: true };
   } catch (err) {
     console.error('[Electron] Erreur print-pdf:', err);
     return { success: false, error: err.message };
