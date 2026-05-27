@@ -5,6 +5,7 @@ interface Props {
   label?: string
   size?: 'sm' | 'md' | 'lg'
   orientation?: Orientation      // portrait (défaut) ou paysage
+  avecOrientation?: boolean      // [DEPRECATED] ignoré, gardé pour compatibilité
   className?: string
   variant?: 'primary' | 'secondary' | 'success' | 'outline-primary'
 }
@@ -14,6 +15,7 @@ export function BoutonImprimer({
   label = 'Imprimer',
   size = 'sm',
   orientation = 'portrait',
+  avecOrientation, // non utilisé, juste pour éviter l'erreur TS
   className = '',
   variant = 'primary',
 }: Props) {
