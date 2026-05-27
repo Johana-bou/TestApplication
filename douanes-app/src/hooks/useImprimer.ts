@@ -5,12 +5,15 @@ import { useAuthStore } from '../store/authStore'
 
 export type Orientation = 'portrait' | 'paysage'
 
+// Détection Electron
+const isElectron = () => !!(window as any).electronAPI
+
 export function useImprimer() {
   const { token } = useAuthStore()
   const [enCours, setEnCours] = useState(false)
 
-  // ✅ Génère et retourne le blobUrl du PDF
-  const genererPDF = async (url: string, orientation: Orientation = 'portrait'): Promise<string | null> => {
+  // Génère le blob PDF
+  const genererBlob = async (url: string, orientation: Orientation = 'portrait'): Promise<Blob | null> => {
     setEnCours(true)
     const toastId = toast.loading('Génération du PDF...', { icon: '🖨️' })
     try {
@@ -19,10 +22,8 @@ export function useImprimer() {
         headers: { Authorization: `Bearer ${token}` },
         params: { orientation },
       })
-      const blob = new Blob([response.data], { type: 'application/pdf' })
-      const blobUrl = URL.createObjectURL(blob)
       toast.dismiss(toastId)
-      return blobUrl
+      return response.data
     } catch (error: unknown) {
       toast.dismiss(toastId)
       const err = error as { response?: { status: number } }
@@ -39,19 +40,32 @@ export function useImprimer() {
     }
   }
 
-  // ✅ Imprimer directement (fallback)
-  const imprimer = async (url: string, orientation: Orientation = 'portrait') => {
-    const blobUrl = await genererPDF(url, orientation)
-    if (!blobUrl) return
+  // Impression via Electron
+  const imprimerElectron = async (url: string, orientation: Orientation = 'portrait') => {
+    const blob = await genererBlob(url, orientation)
+    if (!blob) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = (reader.result as string).split(',')[1]
+      ;(window as any).electronAPI.printPDF(base64, 'document.pdf')
+    }
+    reader.readAsDataURL(blob)
+  }
+
+  // Fallback : téléchargement simple (navigateur)
+  const imprimerFallback = async (url: string, orientation: Orientation = 'portrait') => {
+    const blob = await genererBlob(url, orientation)
+    if (!blob) return
+    const blobUrl = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = blobUrl
     link.download = 'document.pdf'
-    document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
     toast.success('PDF téléchargé')
   }
 
-  return { imprimer, genererPDF, enCours }
+  const imprimer = isElectron() ? imprimerElectron : imprimerFallback
+
+  return { imprimer, genererBlob, enCours }
 }
