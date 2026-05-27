@@ -1,4 +1,9 @@
 {
+  "name": "douanegestion",
+  "version": "1.0.0",
+  "description": "Application de gestion douaniere - Secteur Extreme-Nord",
+  "author": "Direction Generale des Douanes du Cameroun",
+  "main": "main.js",
   "build": {
     "appId": "cm.douanegestion.app",
     "productName": "DouaneGestion",
