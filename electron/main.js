@@ -63,17 +63,24 @@ function waitForBackend(retries = 60) {
   });
 }
 
-// ── IPC : Impression PDF DIRECTE (boîte dialogue système) ─────
+// ── IPC : Impression PDF (fichier temporaire + loadFile) ──────
 ipcMain.handle('print-pdf', async (event, { base64Data, fileName }) => {
   try {
-    // Fenêtre invisible pour charger le PDF
+    // Créer un fichier temporaire
+    const tmpFile = path.join(os.tmpdir(), `print-${Date.now()}.pdf`);
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(tmpFile, buffer);
+    console.log(`[Electron] PDF temporaire créé: ${tmpFile}`);
+
     const win = new BrowserWindow({ show: false });
-    // Charger le PDF depuis une data URL base64
-    await win.loadURL(`data:application/pdf;base64,${base64Data}`);
-    // Déclencher directement la boîte de dialogue d'impression
+    await win.loadFile(tmpFile);
     win.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
       if (!success) console.error(`[Electron] Échec impression: ${errorType}`);
-      win.destroy(); // fermer la fenêtre après impression
+      win.destroy();
+      // Supprimer le fichier temporaire après l'impression
+      setTimeout(() => {
+        try { fs.unlinkSync(tmpFile); } catch (err) { console.error(`[Electron] Suppression fichier échouée: ${err}`); }
+      }, 5000);
     });
     return { success: true };
   } catch (err) {
