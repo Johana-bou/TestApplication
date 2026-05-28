@@ -133,16 +133,19 @@ jobs:
       - name: Copier build React → electron/renderer
         run: xcopy /E /I /Y douanes-app\dist electron\renderer
 
-      - name: Supprimer icônes problématiques
+      - name: Supprimer icônes problématiques (sauf l'icône personnalisée)
         run: |
-          Get-ChildItem -Path electron -Recurse -Filter *.ico | Remove-Item -Force -ErrorAction SilentlyContinue
-          Get-ChildItem -Path electron -Recurse -Filter icon.png | Remove-Item -Force -ErrorAction SilentlyContinue
+          Get-ChildItem -Path electron -Recurse -Filter *.ico | Where-Object { $_.FullName -notlike "*assets\icon.ico" } | Remove-Item -Force -ErrorAction SilentlyContinue
+          Get-ChildItem -Path electron -Recurse -Filter icon.png | Where-Object { $_.FullName -notlike "*assets\icon.png" } | Remove-Item -Force -ErrorAction SilentlyContinue
+
+      - name: Copier l'icône dans la racine electron
+        run: Copy-Item -Path electron\assets\icon.ico -Destination electron\icon.ico -Force
 
       - name: Générer le Setup Windows
         run: |
           cd electron
           npm ci
-          npx electron-builder --win --x64 --publish=never
+          npx electron-builder --win --x64 -c.icon=icon.ico --publish=never
         env:
           GH_TOKEN: ""
           GITHUB_TOKEN: ""
