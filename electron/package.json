@@ -46,7 +46,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "DouaneGestion",
-      "include": "installer.nsh"
+      "include": "installer.nsh",
+      "deleteAppDataOnUninstall": true
     },
     "linux": {
       "target": [
