@@ -49,7 +49,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "DouaneGestion",
       "include": "installer.nsh",
-      "deleteAppDataOnUninstall": true
+      "deleteAppDataOnUninstall": true,
+      "icon": "icon.ico"
     },
     "linux": {
       "icon": "assets/icon.png",
