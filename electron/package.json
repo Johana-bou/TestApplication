@@ -16,7 +16,7 @@
   "build": {
     "appId": "cm.douanegestion.app",
     "productName": "DouaneGestion",
-    "icon": "assets/icon.ico",
+    "icon": "icon.ico",
     "directories": {
       "output": "dist"
     },
@@ -33,7 +33,7 @@
       "renderer/**/*"
     ],
     "win": {
-      "icon": "assets/icon.ico",
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",
