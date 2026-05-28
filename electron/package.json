@@ -50,7 +50,8 @@
       "shortcutName": "DouaneGestion",
       "include": "installer.nsh",
       "deleteAppDataOnUninstall": true,
-      "icon": "icon.ico"
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico"
     },
     "linux": {
       "icon": "assets/icon.png",
