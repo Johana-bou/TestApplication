@@ -49,7 +49,7 @@ export default function Login() {
       {/* Colonne gauche — Photo */}
       <div className="d-none d-lg-flex col-lg-7" style={{ position: 'relative', overflow: 'hidden' }}>
         <img
-          src="/vendors/images/login-page-img.jpeg"
+          src="./vendors/images/login-page-img.jpeg"
           alt="Douanes"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
@@ -61,7 +61,7 @@ export default function Login() {
           <div style={{ maxWidth: 420, margin: '0 auto' }}>
 
             <div className="mb-4 text-center">
-              <img src="/vendors/images/logo-tresor.png" alt=""
+              <img src="./vendors/images/logo-tresor.png" alt=""
                 style={{ width: 60, height: 60, objectFit: 'contain', marginBottom: 12 }} />
               <h4 style={{ fontWeight: 700, color: '#154115ff', marginBottom: 4 }}>Connexion</h4>
               <p style={{ color: '#888', fontSize: 13 }}>Douanes Extrême-Nord</p>

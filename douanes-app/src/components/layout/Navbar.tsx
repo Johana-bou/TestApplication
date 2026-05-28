@@ -309,7 +309,7 @@ export default function Navbar() {
           display: 'flex', alignItems: 'center', gap: 10,
           textDecoration: 'none', marginRight: 16, flexShrink: 0,
         }}>
-          <img src="/vendors/images/logo-tresor.png"
+          <img src="./vendors/images/logo-tresor.png"
             style={{ width: 32, height: 32, objectFit: 'contain' }} alt="Logo" />
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: 0.3 }}>
             Trésor

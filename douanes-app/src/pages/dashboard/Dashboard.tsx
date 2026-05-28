@@ -299,7 +299,7 @@ export default function Dashboard() {
       <div className="card-box pd-20 height-70-p mb-30">
         <div className="row align-items-center">
           <div className="col-md-4">
-            <img src="/vendors/images/banner-img.png" alt="" />
+            <img src="./vendors/images/banner-img.png" alt="" />
           </div>
           <div className="col-md-5">
             <h4 className="font-20 weight-500 mb-10 text-capitalize">

@@ -30,7 +30,7 @@ export function PreLoader() {
     <div className="pre-loader">
       <div className="pre-loader-box">
         <div className="loader-logo">
-          <img src="/vendors/images/logo-tresor.png" alt="" style={{ width: 70, height: 70, objectFit: 'contain' }} />
+          <img src="./vendors/images/logo-tresor.png" alt="" style={{ width: 70, height: 70, objectFit: 'contain' }} />
         </div>
         <div className="loader-progress" style={{ background: '#eee', borderRadius: 4, height: 6, width: '100%', marginTop: 12 }}>
           <div className="bar" style={{ background: '#147c3fff', height: '100%', borderRadius: 4, width: `${progress}%`, transition: 'width 0.15s' }} />

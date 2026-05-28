@@ -46,7 +46,7 @@ export default function PosteSelection() {
       {FILIGRANE_POSITIONS.map((pos, i) => (
         <img
           key={i}
-          src="/vendors/images/logo-tresor.png"
+          src="./vendors/images/logo-tresor.png"
           alt=""
           style={{
             position: 'fixed',
@@ -77,7 +77,7 @@ export default function PosteSelection() {
 
         {/* Logo en filigrane centré DANS le grand div */}
         <img
-          src="/vendors/images/logo-tresor.png"
+          src="./vendors/images/logo-tresor.png"
           alt=""
           style={{
             position: 'absolute',
