@@ -63,26 +63,19 @@ function waitForBackend(retries = 60) {
   });
 }
 
-// ── IPC : Impression PDF (fichier temporaire + loadFile) ──────
+// ── IPC : Impression PDF (ouvrir dans visualiseur par défaut) ──
 ipcMain.handle('print-pdf', async (event, { base64Data, fileName }) => {
   try {
-    // Créer un fichier temporaire
-    const tmpFile = path.join(os.tmpdir(), `print-${Date.now()}.pdf`);
-    const buffer = Buffer.from(base64Data, 'base64');
-    fs.writeFileSync(tmpFile, buffer);
-    console.log(`[Electron] PDF temporaire créé: ${tmpFile}`);
+    const tmpFile = path.join(os.tmpdir(), fileName || 'document.pdf');
+    fs.writeFileSync(tmpFile, Buffer.from(base64Data, 'base64'));
+    console.log(`[Electron] PDF écrit : ${tmpFile}`);
 
-    const win = new BrowserWindow({ show: false });
-    await win.loadFile(tmpFile);
-    win.webContents.print({ silent: false, printBackground: true }, (success, errorType) => {
-      if (!success) console.error(`[Electron] Échec impression: ${errorType}`);
-      win.destroy();
-      // Supprimer le fichier temporaire après l'impression
-      setTimeout(() => {
-        try { fs.unlinkSync(tmpFile); } catch (err) { console.error(`[Electron] Suppression fichier échouée: ${err}`); }
-      }, 5000);
-    });
-    return { success: true };
+    await shell.openPath(tmpFile);
+    setTimeout(() => {
+      try { fs.unlinkSync(tmpFile); } catch {}
+    }, 120000);
+
+    return { success: true, path: tmpFile };
   } catch (err) {
     console.error('[Electron] Erreur print-pdf:', err);
     return { success: false, error: err.message };
