@@ -1,9 +1,14 @@
 {
   "name": "douane-gestion",
   "version": "1.0.0",
-  "description": "Application de gestion douaniere - Secteur Extreme-Nord",
-  "author": "Direction Generale des Douanes du Cameroun",
+  "description": "Application de gestion douaniere",
+  "author": "DouaneGestion",
   "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64 --publish=never",
+    "build:linux": "electron-builder --linux --x64 --publish=never"
+  },
   "devDependencies": {
     "electron": "^30.0.0",
     "electron-builder": "^24.13.0"
@@ -36,7 +41,7 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": false,
+      "perMachine": true,
       "runAfterFinish": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
