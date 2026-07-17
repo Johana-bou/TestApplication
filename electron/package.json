@@ -47,7 +47,7 @@
       "runAfterFinish": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "DouaneGestion",
+      "shortcutName": "SIGREC",
       "include": "installer.nsh",
       "deleteAppDataOnUninstall": true,
       "installerIcon": "icon.ico",
