@@ -46,11 +46,6 @@ def seed_database():
         comptes_data = [
             {"num_compte": "4121226488", "nom_compte": "Recette douane MAROUA", "id_poste": postes[0].id_poste},
             {"num_compte": "4121226490", "nom_compte": "Recette douane LIMANI", "id_poste": postes[1].id_poste},
-            {"num_compte": "4711", "nom_compte": "Caisse des Douanes", "id_poste": None},
-            {"num_compte": "4712", "nom_compte": "Caisse des Douanes - Regionale", "id_poste": None},
-            {"num_compte": "5111", "nom_compte": "Virements recus", "id_poste": None},
-            {"num_compte": "5112", "nom_compte": "Cheques recus", "id_poste": None},
-            {"num_compte": "5211", "nom_compte": "Recettes diverses", "id_poste": None},
         ]
         for c_data in comptes_data:
             compte = Compte(**c_data)
