@@ -1,6 +1,6 @@
 import api from './axios'
 
-// GET /api/pv/  — ADMIN voit tout, RECEVEUR voit son poste
+// GET /api/pv/
 export const getPVList = (params?: Record<string, unknown>) =>
   api.get('/api/pv/', { params }).then(r => r.data)
 
@@ -13,10 +13,6 @@ export const getPV = (id: number) =>
   api.get(`/api/pv/${id}`).then(r => r.data)
 
 // POST /api/pv/
-// Champs obligatoires: date_pv, poste_id
-// Champs optionnels: solde_dernier_controle, mouvements_debiteurs,
-//   mouvements_crediteurs, observation, virements[], cheques[]
-// (num_pv est généré automatiquement par le backend)
 export const createPV = (data: Record<string, unknown>) =>
   api.post('/api/pv/', data).then(r => r.data)
 
@@ -28,7 +24,15 @@ export const updatePV = (id: number, data: { observation?: string }) =>
 export const deletePV = (id: number) =>
   api.delete(`/api/pv/${id}`)
 
-// POST /api/pv/{pv_id}/virements
+// PUT /api/pv/{pv_id}/virements  (remplace tous les virements)
+export const updateVirements = (pvId: number, virements: any[]) =>
+  api.put(`/api/pv/${pvId}/virements`, { virements }).then(r => r.data)
+
+// PUT /api/pv/{pv_id}/cheques    (remplace tous les chèques)
+export const updateCheques = (pvId: number, cheques: any[]) =>
+  api.put(`/api/pv/${pvId}/cheques`, { cheques }).then(r => r.data)
+
+// POST /api/pv/{pv_id}/virements (ajout unitaire – gardé)
 export const addVirement = (pvId: number, data: {
   date_virement: string
   num_virement: string
