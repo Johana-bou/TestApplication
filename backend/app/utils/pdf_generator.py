@@ -199,7 +199,7 @@ def generate_pv_pdf(pv, virements, cheques, poste, utilisateur):
     mvc  = pv.mouvements_crediteurs or 0
     st_  = pv.solde_theorique or 0
     diff = pv.difference or 0
-    sdc  = 0
+    sdc  = pv.solde_dernier_controle or 0
     tdeb = sdc + mvd
 
     # Largeur utile pour les pointillés
