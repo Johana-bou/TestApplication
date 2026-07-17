@@ -5,14 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { createPV, updatePV, getPV } from '../../api/pv.api'
+import { createPV, updatePV, getPV, updateVirements, updateCheques } from '../../api/pv.api'
 import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../hooks/useAuth'
 import { todayAPI } from '../../utils/formatDate'
 import { formatMontant } from '../../utils/formatMontant'
 
-// Schéma avec coerce
 const schema = z.object({
   date_pv: z.string().min(1, 'Date requise'),
   solde_dernier_controle: z.coerce.number().min(0).default(0),
@@ -36,6 +35,13 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+// Style pour cacher les flèches des inputs number
+const numberInputStyle = {
+  appearance: 'textfield',
+  MozAppearance: 'textfield',
+  WebkitAppearance: 'none',
+} as const
+
 export default function PVForm() {
   const navigate = useNavigate()
   const { id } = useParams()
@@ -49,7 +55,7 @@ export default function PVForm() {
   })
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema) as any, // ← contournement TypeScript
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       date_pv: todayAPI(),
       solde_dernier_controle: 0,
@@ -95,7 +101,10 @@ export default function PVForm() {
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
       if (isEdit) {
-        return updatePV(Number(id), { observation: data.observation })
+        await updatePV(Number(id), { observation: data.observation })
+        await updateVirements(Number(id), data.virements)
+        await updateCheques(Number(id), data.cheques)
+        return
       }
       return createPV({
         ...data,
@@ -114,9 +123,14 @@ export default function PVForm() {
 
   if (isEdit && loadingExisting) return <Spinner fullPage />
 
-  // Typage explicite de onSubmit pour éviter l'erreur
   const onSubmit = (data: FormData) => {
     mutation.mutate(data)
+  }
+
+  const handleRemove = (type: string, index: number, removeFn: (idx: number) => void) => {
+    if (window.confirm(`Supprimer ce ${type} ?`)) {
+      removeFn(index)
+    }
   }
 
   return (
@@ -137,8 +151,10 @@ export default function PVForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* ── Informations générales ── */}
         <CardBox className="mb-20">
           <h5 className="mb-3 h6" style={{ borderBottom: '2px solid #7934f3', paddingBottom: 8 }}>
+            <i className="dw dw-file mr-2" style={{ color: '#7934f3' }} />
             Informations générales
           </h5>
           <div className="row">
@@ -173,115 +189,200 @@ export default function PVForm() {
               <div className="col-md-4">
                 <div className="form-group">
                   <label className="font-weight-600">Solde dernier contrôle</label>
-                  <input type="number" {...register('solde_dernier_controle', { valueAsNumber: true })} 
-                    className={`form-control ${errors.solde_dernier_controle ? 'is-invalid' : ''}`} />
+                  <input 
+                    type="number"
+                    min="0"
+                    step="1"
+                    {...register('solde_dernier_controle', { valueAsNumber: true })}
+                    className={`form-control ${errors.solde_dernier_controle ? 'is-invalid' : ''}`}
+                    style={numberInputStyle}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '-', '+'].includes(e.key)) {
+                        e.preventDefault()
+                      }
+                    }}
+                  />
                   {errors.solde_dernier_controle && <div className="invalid-feedback">{errors.solde_dernier_controle.message}</div>}
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="form-group">
                   <label className="font-weight-600">Mouvements débiteurs</label>
-                  <input type="number" {...register('mouvements_debiteurs', { valueAsNumber: true })} 
-                    className={`form-control ${errors.mouvements_debiteurs ? 'is-invalid' : ''}`} />
+                  <input 
+                    type="number"
+                    min="0"
+                    step="1"
+                    {...register('mouvements_debiteurs', { valueAsNumber: true })}
+                    className={`form-control ${errors.mouvements_debiteurs ? 'is-invalid' : ''}`}
+                    style={numberInputStyle}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '-', '+'].includes(e.key)) {
+                        e.preventDefault()
+                      }
+                    }}
+                  />
                   {errors.mouvements_debiteurs && <div className="invalid-feedback">{errors.mouvements_debiteurs.message}</div>}
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="form-group">
                   <label className="font-weight-600">Mouvements créditeurs</label>
-                  <input type="number" {...register('mouvements_crediteurs', { valueAsNumber: true })} 
-                    className={`form-control ${errors.mouvements_crediteurs ? 'is-invalid' : ''}`} />
+                  <input 
+                    type="number"
+                    min="0"
+                    step="1"
+                    {...register('mouvements_crediteurs', { valueAsNumber: true })}
+                    className={`form-control ${errors.mouvements_crediteurs ? 'is-invalid' : ''}`}
+                    style={numberInputStyle}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '-', '+'].includes(e.key)) {
+                        e.preventDefault()
+                      }
+                    }}
+                  />
                   {errors.mouvements_crediteurs && <div className="invalid-feedback">{errors.mouvements_crediteurs.message}</div>}
                 </div>
               </div>
             </div>
           )}
+        </CardBox>
 
-          <div className="form-group">
-            <label className="font-weight-600">Observation</label>
-            <textarea {...register('observation')} className="form-control" rows={3} />
+        {/* ── Virements ── */}
+        <CardBox className="mb-20">
+          <h5 className="mb-3 h6" style={{ borderBottom: '2px solid #04a9f5', paddingBottom: 8 }}>
+            <i className="dw dw-money-2 mr-2" style={{ color: '#04a9f5' }} />
+            Virements
+          </h5>
+          {vFields.length === 0 ? (
+            <p className="text-muted text-center py-3">Aucun virement</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead style={{ background: '#f8f9fa' }}>
+                  <tr><th>Date</th><th>N° Virement</th><th>Montant</th><th>Observation</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {vFields.map((f, i) => (
+                    <tr key={f.id}>
+                      <td><input type="date" {...register(`virements.${i}.date_virement`)} className="form-control form-control-sm" /></td>
+                      <td><input {...register(`virements.${i}.num_virement`)} className="form-control form-control-sm" placeholder="ex: VIR-001" /></td>
+                      <td>
+                        <input 
+                          type="number"
+                          min="0"
+                          step="1"
+                          {...register(`virements.${i}.montant`, { valueAsNumber: true })}
+                          className="form-control form-control-sm"
+                          style={numberInputStyle}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '-', '+'].includes(e.key)) {
+                              e.preventDefault()
+                            }
+                          }}
+                        />
+                      </td>
+                      <td><input {...register(`virements.${i}.observation`)} className="form-control form-control-sm" /></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleRemove('virement', i, removeV)}
+                        >
+                          <i className="dw dw-delete-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-3 text-end">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => addV({ date_virement: todayAPI(), num_virement: '', montant: 0, observation: '' })}
+            >
+              <i className="dw dw-add mr-1" /> Ajouter un virement
+            </button>
           </div>
         </CardBox>
 
-        {!isEdit && (
-          <>
-            <CardBox className="mb-20">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0 h6" style={{ borderBottom: '2px solid #04a9f5', paddingBottom: 8 }}>Virements</h5>
-                <button type="button" className="btn btn-sm btn-outline-primary"
-                  onClick={() => addV({ date_virement: todayAPI(), num_virement: '', montant: 0, observation: '' })}>
-                  <i className="dw dw-add mr-1" /> Ajouter
-                </button>
-              </div>
-              {vFields.length === 0 ? (
-                <p className="text-muted text-center py-3">Aucun virement — cliquez sur Ajouter</p>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-sm">
-                    <thead style={{ background: '#f8f9fa' }}>
-                      <tr><th>Date</th><th>N° Virement</th><th>Montant</th><th>Observation</th><th></th></tr>
-                    </thead>
-                    <tbody>
-                      {vFields.map((f, i) => (
-                        <tr key={f.id}>
-                          <td><input type="date" {...register(`virements.${i}.date_virement`)} className="form-control form-control-sm" /></td>
-                          <td><input {...register(`virements.${i}.num_virement`)} className="form-control form-control-sm" placeholder="ex: VIR-001" /></td>
-                          <td><input type="number" {...register(`virements.${i}.montant`, { valueAsNumber: true })} 
-                            className="form-control form-control-sm" /></td>
-                          <td><input {...register(`virements.${i}.observation`)} className="form-control form-control-sm" /></td>
-                          <td>
-                            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => removeV(i)}>
-                              <i className="dw dw-delete-3" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardBox>
+        {/* ── Chèques ── */}
+        <CardBox className="mb-20">
+          <h5 className="mb-3 h6" style={{ borderBottom: '2px solid #1ec01e', paddingBottom: 8 }}>
+            <i className="dw dw-money-bag mr-2" style={{ color: '#1ec01e' }} />
+            Chèques
+          </h5>
+          {cFields.length === 0 ? (
+            <p className="text-muted text-center py-3">Aucun chèque</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead style={{ background: '#f8f9fa' }}>
+                  <tr><th>Date</th><th>N° Chèque</th><th>Montant</th><th>N° DR</th><th>Observation</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {cFields.map((f, i) => (
+                    <tr key={f.id}>
+                      <td><input type="date" {...register(`cheques.${i}.date_cheque`)} className="form-control form-control-sm" /></td>
+                      <td><input {...register(`cheques.${i}.num_cheque`)} className="form-control form-control-sm" placeholder="ex: CHQ-001" /></td>
+                      <td>
+                        <input 
+                          type="number"
+                          min="0"
+                          step="1"
+                          {...register(`cheques.${i}.montant`, { valueAsNumber: true })}
+                          className="form-control form-control-sm"
+                          style={numberInputStyle}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '-', '+'].includes(e.key)) {
+                              e.preventDefault()
+                            }
+                          }}
+                        />
+                      </td>
+                      <td><input {...register(`cheques.${i}.num_dr`)} className="form-control form-control-sm" /></td>
+                      <td><input {...register(`cheques.${i}.observation`)} className="form-control form-control-sm" /></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleRemove('chèque', i, removeC)}
+                        >
+                          <i className="dw dw-delete-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-3 text-end">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-success"
+              onClick={() => addC({ date_cheque: todayAPI(), num_cheque: '', montant: 0, num_dr: '', observation: '' })}
+            >
+              <i className="dw dw-add mr-1" /> Ajouter un chèque
+            </button>
+          </div>
+        </CardBox>
 
-            <CardBox className="mb-20">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0 h6" style={{ borderBottom: '2px solid #1ec01e', paddingBottom: 8 }}>Chèques</h5>
-                <button type="button" className="btn btn-sm btn-outline-success"
-                  onClick={() => addC({ date_cheque: todayAPI(), num_cheque: '', montant: 0, num_dr: '', observation: '' })}>
-                  <i className="dw dw-add mr-1" /> Ajouter
-                </button>
-              </div>
-              {cFields.length === 0 ? (
-                <p className="text-muted text-center py-3">Aucun chèque — cliquez sur Ajouter</p>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-sm">
-                    <thead style={{ background: '#f8f9fa' }}>
-                      <tr><th>Date</th><th>N° Chèque</th><th>Montant</th><th>N° DR</th><th>Observation</th><th></th></tr>
-                    </thead>
-                    <tbody>
-                      {cFields.map((f, i) => (
-                        <tr key={f.id}>
-                          <td><input type="date" {...register(`cheques.${i}.date_cheque`)} className="form-control form-control-sm" /></td>
-                          <td><input {...register(`cheques.${i}.num_cheque`)} className="form-control form-control-sm" placeholder="ex: CHQ-001" /></td>
-                          <td><input type="number" {...register(`cheques.${i}.montant`, { valueAsNumber: true })} 
-                            className="form-control form-control-sm" /></td>
-                          <td><input {...register(`cheques.${i}.num_dr`)} className="form-control form-control-sm" /></td>
-                          <td><input {...register(`cheques.${i}.observation`)} className="form-control form-control-sm" /></td>
-                          <td>
-                            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => removeC(i)}>
-                              <i className="dw dw-delete-3" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardBox>
-          </>
-        )}
+        {/* ── Observation ── */}
+        <CardBox className="mb-20">
+          <h5 className="mb-3 h6" style={{ borderBottom: '2px solid #ff9f1c', paddingBottom: 8 }}>
+            <i className="dw dw-edit-2 mr-2" style={{ color: '#ff9f1c' }} />
+            Observation
+          </h5>
+          <div className="form-group">
+            <textarea {...register('observation')} className="form-control" rows={4} 
+              placeholder="Observations générales sur le contrôle..." />
+          </div>
+        </CardBox>
 
+        {/* ── Boutons ── */}
         <div className="d-flex" style={{ gap: 10 }}>
           <button type="button" className="btn btn-secondary" onClick={() => navigate('/pv')}>Annuler</button>
           <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>
