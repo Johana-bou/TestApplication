@@ -1,3 +1,4 @@
+# app/routers/pv_router.py
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from datetime import date
@@ -34,6 +35,7 @@ def verifier_acces_pv(utilisateur: Utilisateur, pv: ProcesVerbal):
         raise HTTPException(status_code=403, detail="Accès non autorisé à ce procès-verbal")
     return True
 
+
 def generer_num_pv(db: Session, poste: Poste, date_pv: date, id_pv: Optional[int] = None) -> str:
     nb_existants = db.query(ProcesVerbal).filter(
         ProcesVerbal.id_poste == poste.id_poste,
@@ -42,10 +44,10 @@ def generer_num_pv(db: Session, poste: Poste, date_pv: date, id_pv: Optional[int
     )
     if id_pv is not None:
         nb_existants = nb_existants.filter(ProcesVerbal.id_pv != id_pv)
-    count = nb_existants.count()
-    sequence = count + 1
+    sequence  = nb_existants.count() + 1
     code_poste = (poste.code_poste or "PV")[:4].upper()
     return f"PV-{code_poste}-{date_pv.year}-{str(date_pv.month).zfill(2)}-{str(sequence).zfill(3)}"
+
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
@@ -58,48 +60,39 @@ def create_pv(
 ):
     from app.utils.pdf_generator import get_dernier_jour_mois, get_mois_precedent
 
-    # 1. Récupération du poste_id
     poste_id = data.get("poste_id")
     if not poste_id:
         raise HTTPException(status_code=400, detail="poste_id est requis")
 
-    # 2. Vérification des droits
     if current_user.role != "ADMIN" and current_user.poste_id != poste_id:
         raise HTTPException(status_code=403, detail="Accès non autorisé à ce poste")
 
-    # 3. Récupération du poste
     poste = db.query(Poste).filter(Poste.id_poste == poste_id).first()
     if not poste:
         raise HTTPException(status_code=404, detail="Poste non trouvé")
 
-    # 4. Date du PV
     date_pv_str = data.get("date_pv")
     if not date_pv_str:
         raise HTTPException(status_code=400, detail="date_pv est obligatoire")
     date_pv = date.fromisoformat(date_pv_str)
 
-    # 5. Calcul des dates de période
-    annee, mois = date_pv.year, date_pv.month
-    dernier_jour = get_dernier_jour_mois(annee, mois)
+    annee, mois          = date_pv.year, date_pv.month
+    dernier_jour         = get_dernier_jour_mois(annee, mois)
     annee_prec, mois_prec = get_mois_precedent(annee, mois)
-    dernier_jour_prec = get_dernier_jour_mois(annee_prec, mois_prec)
+    dernier_jour_prec    = get_dernier_jour_mois(annee_prec, mois_prec)
 
     date_dernier_controle = date(annee_prec, mois_prec, dernier_jour_prec)
     date_debut_periode    = date(annee, mois, 1)
     date_fin_periode      = date(annee, mois, dernier_jour)
 
-    # 6. Calculs financiers
     solde_dc  = data.get("solde_dernier_controle", 0) or 0
     mouv_deb  = data.get("mouvements_debiteurs",   0) or 0
     mouv_cred = data.get("mouvements_crediteurs",  0) or 0
 
     solde_theorique = solde_dc + mouv_deb - mouv_cred
     difference      = solde_theorique - solde_dc
+    num_pv          = generer_num_pv(db, poste, date_pv)
 
-    # 7. Génération automatique du numéro de PV
-    num_pv = generer_num_pv(db, poste, date_pv)
-
-    # 8. Création du PV
     pv = ProcesVerbal(
         id_poste               = poste_id,
         id_user                = current_user.id_user,
@@ -118,7 +111,6 @@ def create_pv(
     db.add(pv)
     db.flush()
 
-    # 9. Virements
     for v in data.get("virements", []):
         db.add(SituationVirement(
             id_pv         = pv.id_pv,
@@ -128,7 +120,6 @@ def create_pv(
             observation   = v.get("observation")
         ))
 
-    # 10. Chèques
     for c in data.get("cheques", []):
         db.add(SituationCheque(
             id_pv       = pv.id_pv,
@@ -140,12 +131,8 @@ def create_pv(
         ))
 
     db.commit()
+    return {"message": "PV créé avec succès", "id_pv": pv.id_pv, "num_pv": pv.num_pv}
 
-    return {
-        "message": "PV créé avec succès",
-        "id_pv": pv.id_pv,
-        "num_pv": pv.num_pv
-    }
 
 # ========== 2. LISTER TOUS LES PV ==========
 @router.get("/")
@@ -160,7 +147,6 @@ def get_all_pv(
         query = query.filter(ProcesVerbal.id_poste == current_user.poste_id)
 
     pvs = query.order_by(ProcesVerbal.date_pv.desc()).offset(skip).limit(limit).all()
-
     return [
         {
             "id_pv"          : p.id_pv,
@@ -201,7 +187,7 @@ def get_pv_by_poste(
     ]
 
 
-# ========== 4. AJOUTER UN VIREMENT ==========
+# ========== 4. AJOUTER UN VIREMENT (unitaire) ==========
 @router.post("/{pv_id}/virements", status_code=201)
 def add_virement(
     pv_id       : int,
@@ -227,7 +213,7 @@ def add_virement(
     return {"id_virement": virement.id_virement, "message": "Virement ajouté"}
 
 
-# ========== 5. AJOUTER PLUSIEURS VIREMENTS ==========
+# ========== 5. AJOUTER PLUSIEURS VIREMENTS (bulk) ==========
 @router.post("/{pv_id}/virements/bulk", status_code=201)
 def add_multiple_virements(
     pv_id       : int,
@@ -255,7 +241,84 @@ def add_multiple_virements(
     return {"message": f"{len(nouveaux)} virement(s) ajouté(s)"}
 
 
-# ========== 6. DÉTAIL D'UN PV ==========
+# ========== 6. REMPLACER TOUS LES VIREMENTS ==========
+@router.put("/{pv_id}/virements")
+def replace_virements(
+    pv_id       : int,
+    data        : VirementsBulkCreate,
+    db          : Session     = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_user)
+):
+    """
+    Remplace TOUS les virements existants d'un PV par la nouvelle liste.
+    Utilisé lors de la modification d'un PV depuis le formulaire.
+    """
+    pv = db.query(ProcesVerbal).filter(ProcesVerbal.id_pv == pv_id).first()
+    if not pv:
+        raise HTTPException(404, "PV non trouvé")
+    verifier_acces_pv(current_user, pv)
+
+    # Supprimer tous les virements existants
+    db.query(SituationVirement).filter(SituationVirement.id_pv == pv_id).delete()
+
+    # Ajouter les nouveaux
+    for v in data.virements:
+        db.add(SituationVirement(
+            id_pv         = pv_id,
+            date_virement = v.date_virement,
+            num_virement  = v.num_virement,
+            montant       = v.montant,
+            observation   = v.observation
+        ))
+
+    db.commit()
+    return {
+        "message"    : f"{len(data.virements)} virement(s) enregistré(s)",
+        "id_pv"      : pv_id,
+        "nb_virements": len(data.virements)
+    }
+
+
+# ========== 7. REMPLACER TOUS LES CHÈQUES ==========
+@router.put("/{pv_id}/cheques")
+def replace_cheques(
+    pv_id       : int,
+    data        : ChequesBulkCreate,
+    db          : Session     = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_user)
+):
+    """
+    Remplace TOUS les chèques existants d'un PV par la nouvelle liste.
+    Utilisé lors de la modification d'un PV depuis le formulaire.
+    """
+    pv = db.query(ProcesVerbal).filter(ProcesVerbal.id_pv == pv_id).first()
+    if not pv:
+        raise HTTPException(404, "PV non trouvé")
+    verifier_acces_pv(current_user, pv)
+
+    # Supprimer tous les chèques existants
+    db.query(SituationCheque).filter(SituationCheque.id_pv == pv_id).delete()
+
+    # Ajouter les nouveaux
+    for c in data.cheques:
+        db.add(SituationCheque(
+            id_pv       = pv_id,
+            date_cheque = c.date_cheque,
+            num_cheque  = c.num_cheque,
+            montant     = c.montant,
+            num_dr      = c.num_dr,
+            observation = c.observation
+        ))
+
+    db.commit()
+    return {
+        "message"  : f"{len(data.cheques)} chèque(s) enregistré(s)",
+        "id_pv"    : pv_id,
+        "nb_cheques": len(data.cheques)
+    }
+
+
+# ========== 8. DÉTAIL D'UN PV ==========
 @router.get("/{pv_id}")
 def get_pv_by_id(
     pv_id       : int,
@@ -267,20 +330,20 @@ def get_pv_by_id(
         raise HTTPException(status_code=404, detail="PV non trouvé")
 
     if current_user.role != "ADMIN" and current_user.poste_id != pv.id_poste:
-        raise HTTPException(status_code=403, detail="Accès non autorisé à ce procès-verbal")
+        raise HTTPException(status_code=403, detail="Accès non autorisé")
 
     virements = db.query(SituationVirement).filter(SituationVirement.id_pv == pv_id).all()
     cheques   = db.query(SituationCheque).filter(SituationCheque.id_pv   == pv_id).all()
 
     return {
-        "id_pv"                : pv.id_pv,
-        "num_pv"               : pv.num_pv,
-        "date_pv"              : pv.date_pv,
-        "date_dernier_controle": pv.date_dernier_controle,
-        "date_debut_periode"   : pv.date_debut_periode,
-        "date_fin_periode"     : pv.date_fin_periode,
-        "id_poste"             : pv.id_poste,
-        "id_user"              : pv.id_user,
+        "id_pv"                 : pv.id_pv,
+        "num_pv"                : pv.num_pv,
+        "date_pv"               : pv.date_pv,
+        "date_dernier_controle" : pv.date_dernier_controle,
+        "date_debut_periode"    : pv.date_debut_periode,
+        "date_fin_periode"      : pv.date_fin_periode,
+        "id_poste"              : pv.id_poste,
+        "id_user"               : pv.id_user,
         "solde_dernier_controle": float(pv.solde_dernier_controle or 0),
         "mouvements_debiteurs"  : float(pv.mouvements_debiteurs   or 0),
         "mouvements_crediteurs" : float(pv.mouvements_crediteurs  or 0),
@@ -311,7 +374,7 @@ def get_pv_by_id(
     }
 
 
-# ========== 7. MODIFIER UN PV ==========
+# ========== 9. MODIFIER UN PV (observation seulement) ==========
 @router.put("/{pv_id}")
 def update_pv(
     pv_id       : int,
@@ -333,7 +396,7 @@ def update_pv(
     return {"id_pv": pv.id_pv, "num_pv": pv.num_pv, "message": "PV mis à jour"}
 
 
-# ========== 8. SUPPRIMER UN PV ==========
+# ========== 10. SUPPRIMER UN PV ==========
 @router.delete("/{pv_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pv(
     pv_id       : int,
@@ -344,14 +407,14 @@ def delete_pv(
     if not pv:
         raise HTTPException(status_code=404, detail="PV non trouvé")
 
-    # ADMIN : tout ; RECEVEUR : seulement ceux de son poste
     if current_user.role != "ADMIN" and current_user.poste_id != pv.id_poste:
         raise HTTPException(status_code=403, detail="Droits insuffisants")
 
-    db.delete(pv)   # La cascade fonctionne maintenant
+    db.delete(pv)
     db.commit()
 
-# ========== 9. GÉNÉRER LE PDF ==========
+
+# ========== 11. GÉNÉRER LE PDF ==========
 @router.get("/{pv_id}/pdf")
 def generate_pdf(
     pv_id       : int,
@@ -377,7 +440,9 @@ def generate_pdf(
         return Response(
             content    = pdf_bytes,
             media_type = "application/pdf",
-            headers    = {"Content-Disposition": f'attachment; filename="PV_{pv.num_pv}.pdf"'}
+            headers    = {
+                "Content-Disposition": f'attachment; filename="PV_{pv.num_pv}.pdf"'
+            }
         )
     except Exception as e:
         import traceback; traceback.print_exc()
