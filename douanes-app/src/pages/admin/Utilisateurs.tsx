@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,10 +8,14 @@ import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { getPostes } from '../../api/admin.api'
 import { useQuery as useQ } from '@tanstack/react-query'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function Utilisateurs() {
   const qc = useQueryClient()
   const [editItem, setEditItem] = useState<Record<string, unknown> | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [showForm, setShowForm] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
@@ -83,7 +87,7 @@ export default function Utilisateurs() {
               ? 'Modifiez nom, prénom, rôle ou statut. L\'identifiant ne peut pas être modifié.'
               : 'L\'affectation au poste sera créée automatiquement lors de la création.'}
           </div>
-          <form onSubmit={handleSubmit(d => saveMutation.mutate(d as unknown as Record<string, unknown>))}>
+          <form ref={formRef} onSubmit={handleSubmit(d => saveMutation.mutate(d as unknown as Record<string, unknown>))}>
             <div className="row">
               <div className="col-md-3">
                 <div className="form-group">

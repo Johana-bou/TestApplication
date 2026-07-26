@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../hooks/useAuth'
 import { todayAPI } from '../../utils/formatDate'
 import { formatMontant } from '../../utils/formatMontant'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 const schema = z.object({
   date_pv: z.string().min(1, 'Date requise'),
@@ -46,6 +47,9 @@ export default function PVForm() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const isEdit = Boolean(id)
 
   const { data: existing, isLoading: loadingExisting } = useQuery({
@@ -150,7 +154,7 @@ export default function PVForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form ref={formRef} onSubmit={handleSubmit(onSubmit)}>
         {/* ── Informations générales ── */}
         <CardBox className="mb-20">
           <h5 className="mb-3 h6" style={{ borderBottom: '2px solid #7934f3', paddingBottom: 8 }}>

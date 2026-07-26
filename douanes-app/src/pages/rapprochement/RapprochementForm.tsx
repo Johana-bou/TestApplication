@@ -1,5 +1,5 @@
 // src/pages/RapprochementNouveau.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import api from '../../api/axios'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 const MOIS_LABELS = [
   'Janvier','Février','Mars','Avril','Mai','Juin',
@@ -29,6 +30,9 @@ interface ExistantInfo {
 export default function RapprochementNouveau() {
   const navigate = useNavigate()
   const { poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [searchParams] = useSearchParams()
   const today = new Date()
   const anneeCourante = today.getFullYear()
@@ -155,7 +159,7 @@ export default function RapprochementNouveau() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit}>
   <div className="row">
 
     {/* ── Bloc 1 : Sélection compte + période ── */}

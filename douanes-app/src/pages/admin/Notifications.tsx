@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -10,6 +10,7 @@ import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { toDisplay } from '../../utils/formatDate'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 const TYPE_COLORS: Record<string, string> = {
   INFO: '#04a9f5',
@@ -20,6 +21,9 @@ const TYPE_COLORS: Record<string, string> = {
 export default function Notifications() {
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [filterNonLu, setFilterNonLu] = useState(false)
 
@@ -102,7 +106,7 @@ export default function Notifications() {
       {showForm && (
         <CardBox className="mb-20">
           <h5 className="mb-3 h6">Envoyer une notification</h5>
-          <form onSubmit={handleSubmit(d => createMutation.mutate({ ...d, id_user: Number(d.id_user) }))}>
+          <form ref={formRef} onSubmit={handleSubmit(d => createMutation.mutate({ ...d, id_user: Number(d.id_user) }))}>
             <div className="row">
               <div className="col-md-4">
                 <div className="form-group">

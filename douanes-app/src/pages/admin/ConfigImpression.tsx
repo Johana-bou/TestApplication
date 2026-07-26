@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -6,9 +6,13 @@ import { getConfigImpression, saveConfigImpression, type ConfigImpression } from
 import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../hooks/useAuth'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function ConfigImpressionPage() {
   const { poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const { register, handleSubmit, setValue, watch } = useForm<ConfigImpression>({
     defaultValues: {
       entete: '',
@@ -65,7 +69,7 @@ export default function ConfigImpressionPage() {
 
       <div className="row">
         <div className="col-lg-7">
-          <form onSubmit={handleSubmit(d => mutation.mutate(d))}>
+          <form ref={formRef} onSubmit={handleSubmit(d => mutation.mutate(d))}>
             <CardBox className="mb-20">
               <h5 className="mb-4 h6" style={{ borderBottom: '2px solid #7934f3', paddingBottom: 8 }}>
                 <i className="dw dw-printer mr-2" style={{ color: '#7934f3' }} />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,10 +8,14 @@ import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import type { Unite } from '../../types/admin.types'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function Unites() {
   const qc = useQueryClient()
   const [editItem, setEditItem] = useState<Unite | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [showModal, setShowModal] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
@@ -141,7 +145,7 @@ export default function Unites() {
                 <h5 className="modal-title">{editItem ? 'Modifier l’unité' : 'Nouvelle unité'}</h5>
                 <button type="button" className="close" onClick={closeModal}>&times;</button>
               </div>
-              <form onSubmit={handleSubmit((d) => saveMutation.mutate(d))}>
+              <form ref={formRef} onSubmit={handleSubmit((d) => saveMutation.mutate(d))}>
                 <div className="modal-body">
                   <div className="form-group">
                     <label className="font-weight-600">Nom de l'unité</label>

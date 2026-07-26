@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,10 +8,14 @@ import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useAuth } from '../../hooks/useAuth'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function Comptes() {
   const qc = useQueryClient()
   const { isAdmin, poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [editItem, setEditItem] = useState<Record<string, unknown> | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -97,7 +101,7 @@ export default function Comptes() {
       {showForm && (
         <CardBox className="mb-20">
           <h5 className="mb-3 h6">{editItem ? 'Modifier' : 'Nouveau'} compte</h5>
-          <form onSubmit={handleSubmit((d) => saveMutation.mutate(d as Record<string, unknown>))}>
+          <form ref={formRef} onSubmit={handleSubmit((d) => saveMutation.mutate(d as Record<string, unknown>))}>
             <div className="row">
               <div className="col-md-3">
                 <div className="form-group">

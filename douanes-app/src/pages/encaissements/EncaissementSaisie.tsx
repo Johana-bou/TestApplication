@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,6 +12,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useDebounce } from '../../hooks/useDebounce'
 import { todayAPI } from '../../utils/formatDate'
 import { formatMontant } from '../../utils/formatMontant'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 interface LigneResolue { num_ligne: string; intitule: string; code_taxe: string }
 
@@ -25,6 +26,9 @@ type FormData = z.infer<typeof schema>
 
 export default function EncaissementSaisie() {
   const { isAdmin, poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [numLigneInput, setNumLigneInput] = useState('')
   const [ligneResolue, setLigneResolue] = useState<LigneResolue | null>(null)
   const [ligneErreur, setLigneErreur] = useState('')
@@ -136,7 +140,7 @@ export default function EncaissementSaisie() {
               Nouveau encaissement
             </h5>
 
-            <form onSubmit={handleSubmit(data => {
+            <form ref={formRef} onSubmit={handleSubmit(data => {
               setSavedUniteId(data.id_unite)
               mutation.mutate({
                 id_unite: data.id_unite,

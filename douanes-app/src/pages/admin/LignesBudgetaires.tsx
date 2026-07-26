@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -7,10 +7,14 @@ import type { LigneBudgetaire } from '../../api/lignes.api'
 import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function LignesBudgetaires() {
   const qc = useQueryClient()
   const [editItem, setEditItem] = useState<LigneBudgetaire | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [showForm, setShowForm] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -91,7 +95,7 @@ export default function LignesBudgetaires() {
             <i className="dw dw-information mr-1" />
             Les lignes budgétaires sont globales — elles s'appliquent à tous les postes.
           </div>
-          <form onSubmit={handleSubmit(data => {
+          <form ref={formRef} onSubmit={handleSubmit(data => {
             if (editItem) {
               updateMutation.mutate({ id: editItem.id!, data })
             } else {

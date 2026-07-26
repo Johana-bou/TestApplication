@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -6,6 +6,7 @@ import { getMonProfil, updateUtilisateur } from '../../api/admin.api'
 import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuth } from '../../hooks/useAuth'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 interface ProfilForm {
   nom: string
@@ -17,6 +18,9 @@ interface ProfilForm {
 
 export default function Profil() {
   const { user, poste, initiales, userId } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const { data: profil, isLoading } = useQuery({ queryKey: ['mon-profil'], queryFn: getMonProfil })
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProfilForm>()
 
@@ -97,7 +101,7 @@ export default function Profil() {
 
         {/* Formulaire */}
         <div className="col-lg-8">
-          <form onSubmit={handleSubmit(d => mutation.mutate(d))}>
+          <form ref={formRef} onSubmit={handleSubmit(d => mutation.mutate(d))}>
             <CardBox className="mb-20">
               <h5 className="mb-4 h6" style={{ borderBottom: '2px solid #7934f3', paddingBottom: 8 }}>
                 Informations personnelles

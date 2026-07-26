@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -15,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useDebounce } from '../../hooks/useDebounce'
 import { todayAPI } from '../../utils/formatDate'
 import { formatMontant } from '../../utils/formatMontant'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 interface Ligne {
   id_usager: number
@@ -27,6 +28,9 @@ interface Ligne {
 export default function EtatNominatifForm() {
   const navigate = useNavigate()
   const { poste } = useAuth()
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [typeEtat, setTypeEtat] = useState<'RAR' | 'AMENDE'>('RAR')
   const [compteAmende, setCompteAmende] = useState<Record<string, unknown> | null>(null)
   const [lignes, setLignes] = useState<Ligne[]>([])
@@ -129,7 +133,7 @@ export default function EtatNominatifForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(d => mutation.mutate(d as Record<string, unknown>))}>
+      <form ref={formRef} onSubmit={handleSubmit(d => mutation.mutate(d as Record<string, unknown>))}>
         {/* Infos générales */}
         <CardBox className="mb-20">
           <h5 className="mb-4 h6" style={{ borderBottom: '2px solid #7934f3', paddingBottom: 8 }}>

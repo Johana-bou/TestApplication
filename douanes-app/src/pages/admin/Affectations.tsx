@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -10,10 +10,14 @@ import { CardBox } from '../../components/ui/CardBox'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { toDisplay } from '../../utils/formatDate'
+import { useEnterNavigation } from '../../hooks/useEnterNavigation'
 
 export default function Affectations() {
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  useEnterNavigation(formRef)
+
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const { data: affectations, isLoading } = useQuery({ queryKey: ['affectations'], queryFn: getAffectations })
@@ -80,7 +84,7 @@ export default function Affectations() {
             <strong>Important :</strong> La création d'une nouvelle affectation terminera automatiquement
             toutes les affectations actives de l'utilisateur sélectionné.
           </div>
-          <form onSubmit={handleSubmit(d => createMutation.mutate({
+          <form ref={formRef} onSubmit={handleSubmit(d => createMutation.mutate({
             id_user: Number(d.id_user),
             id_poste: Number(d.id_poste),
             date_debut: d.date_debut,
